@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>RESILIENT 3T-MBG — Offline</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<aside class="sidebar">
+<div class="brand"><div class="logo">3T</div><div><b>RESILIENT 3T-MBG</b><br><small>Offline Distribution System</small></div></div>
+<nav class="nav">
+<button class="active" data-page="dashboard"><span>⌂</span>Dashboard</button>
+<button data-page="input"><span>＋</span>Input Data</button>
+<button data-page="network"><span>⌘</span>Network Map</button>
+<button data-page="regionalmap"><span>▦</span>Peta Papua Barat Daya</button>
+<button data-page="weather"><span>☁</span>BMKG & Cuaca</button>
+<button data-page="route"><span>➤</span>Route Planning</button>
+<button data-page="risk"><span>⚠</span>Risk & Alert</button>
+<button data-page="capacity"><span>▣</span>Capacity Check</button>
+<button data-page="backup"><span>↻</span>Backup Network</button>
+<button data-page="backupdata"><span>⇄</span>Backup Data</button>
+</nav>
+<div class="side">100% berjalan lokal.<br>Data tersimpan di browser perangkat.</div>
+</aside>
+
+<main class="main">
+<header class="top"><div><h1 id="title">Dashboard</h1><p id="subtitle">RESILIENT 3T-MBG — sistem distribusi MBG yang dapat digunakan tanpa internet</p></div><div class="status">● OFFLINE READY</div></header>
+
+<section id="dashboard" class="page active">
+<div class="cards">
+<div class="card"><div class="kicker">Total Node</div><div id="mNodes" class="metric">0</div><div class="kicker">SPPG, hub & sekolah</div></div>
+<div class="card"><div class="kicker">Total Rute</div><div id="mRoutes" class="metric">0</div><div class="kicker">Darat / laut / hybrid</div></div>
+<div class="card"><div class="kicker">Gangguan Aktif</div><div id="mRisk" class="metric">0</div><div class="kicker">Input pengguna</div></div>
+<div class="card"><div class="kicker">Data Tersimpan</div><div id="mSaved" class="metric">0</div><div class="kicker">rekaman lokal</div></div>
+</div>
+<div class="grid"><div class="card"><h3>Jaringan Distribusi</h3><div id="dashMap" class="map"></div></div>
+<div class="card"><h3>Status Sistem</h3><div class="alert good"><b>✓ Offline mode aktif</b><br>Data dapat dimasukkan, diedit, dan disimpan tanpa koneksi internet.</div><div class="info"><b>Alur:</b><br>Input data → simpan lokal → analisis rute → risk check → capacity check → backup network.</div><div class="footer">Gunakan menu <b>Input Data</b> untuk memasukkan kondisi lapangan saat survei.</div></div></div>
+</section>
+
+<section id="input" class="page">
+<div class="grid2">
+<div class="card"><h3>＋ Tambah Node Distribusi</h3>
+<form id="nodeForm">
+<div class="formgrid"><label>Nama node<input id="nName" required placeholder="Contoh: SPPG Sorong"></label><label>Jenis<select id="nType"><option value="sppg">SPPG / Dapur</option><option value="hub">Hub Distribusi</option><option value="school">Sekolah</option></select></label></div>
+<div class="formgrid"><label>Wilayah<input id="nArea" placeholder="Contoh: Raja Ampat"></label><label>Kapasitas (porsi/hari)<input id="nCap" type="number" min="0" value="0"></label></div>
+<div class="formgrid"><label>Posisi X (%)<input id="nX" type="number" min="2" max="95" value="50"></label><label>Posisi Y (%)<input id="nY" type="number" min="5" max="90" value="50"></label></div>
+<label>Catatan<textarea id="nNote" placeholder="Kondisi jalan, akses laut, jam operasi, dll."></textarea></label>
+<div class="buttons"><button class="btn primary" type="submit">Simpan Node</button><button class="btn" type="reset">Reset</button></div></form></div>
+
+<div class="card"><h3>＋ Tambah Rute</h3>
+<form id="routeForm"><div class="formgrid"><label>Asal<select id="rFrom"></select></label><label>Tujuan<select id="rTo"></select></label></div>
+<div class="formgrid"><label>Moda<select id="rMode"><option>Darat</option><option>Laut</option><option>Darat + Laut</option></select></label><label>Waktu tempuh (menit)<input id="rTime" type="number" min="0" value="60"></label></div>
+<div class="formgrid"><label>Risiko<select id="rRisk"><option>Rendah</option><option>Sedang</option><option>Tinggi</option></select></label><label>Kapasitas (porsi/hari)<input id="rCap" type="number" min="0" value="0"></label></div>
+<div class="buttons"><button class="btn primary" type="submit">Simpan Rute</button><button class="btn" type="reset">Reset</button></div></form>
+<div class="footer">Rute yang disimpan akan muncul di Network Map dan Route Planning.</div></div></div>
+
+<div class="card" style="margin-top:14px"><h3>Data Node Tersimpan</h3><div id="nodeTable"></div></div>
+<div class="card" style="margin-top:14px"><h3>Data Rute Tersimpan</h3><div id="routeTable"></div></div>
+</section>
+
+<section id="network" class="page"><div class="card"><h3>Network Map — Data Lokal</h3><div id="networkMap" class="map"></div><div class="footer">Titik dan rute diambil dari data yang tersimpan di perangkat. Tidak membutuhkan peta online.</div></div></section>
+
+
+
+
+
+<section id="regionalmap" class="page">
+  <div class="card">
+    <h3>🗺️ Peta Fokus Wilayah Studi</h3>
+    <p style="font-size:10px;color:#68758a">
+      Prototype difokuskan hanya pada <b>Kabupaten Maybrat</b> dan <b>Kabupaten Tambrauw</b>
+      sebagai wilayah studi 3T untuk desain jaringan distribusi MBG.
+    </p>
+
+    <div class="two-region-map">
+      <div class="sea-label">PAPUA BARAT DAYA</div>
+
+      <div class="region-block tambrauw-focus">
+        <div class="region-title">KABUPATEN TAMBRAUW</div>
+        <div class="region-capital">Fef</div>
+        <div class="mini-node node-hub">H</div>
+        <div class="mini-node node-school s1">S</div>
+        <div class="mini-node node-school s2">S</div>
+        <div class="mini-line line-a"></div>
+        <div class="mini-line line-b"></div>
+      </div>
+
+      <div class="region-block maybrat-focus">
+        <div class="region-title">KABUPATEN MAYBRAT</div>
+        <div class="region-capital">Kumurkek</div>
+        <div class="mini-node node-sppg">SP</div>
+        <div class="mini-node node-hub h2">H</div>
+        <div class="mini-node node-school s3">S</div>
+        <div class="mini-node node-school s4">S</div>
+        <div class="mini-line line-c"></div>
+        <div class="mini-line line-d"></div>
+      </div>
+
+      <div class="corridor"></div>
+      <div class="corridor-label">KORIDOR DISTRIBUSI KONSEPTUAL</div>
+
+      <div class="map-legend">
+        <b>Legenda prototype</b>
+        <div><i class="legend-dot sppg-dot"></i> SPPG / Dapur</div>
+        <div><i class="legend-dot hub-dot"></i> Hub</div>
+        <div><i class="legend-dot school-dot"></i> Sekolah</div>
+        <div><i class="legend-line"></i> Jalur distribusi</div>
+      </div>
+    </div>
+
+    <div class="alert warn" style="margin-top:12px">
+      <b>Catatan:</b> visual ini adalah peta fokus jaringan konseptual, bukan peta batas
+      administrasi berskala. Titik SPPG, hub, dan sekolah pada prototype harus diganti
+      dengan koordinat/data resmi ketika data lapangan sudah tersedia.
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>⭐ Kabupaten Maybrat</h3>
+      <div class="info">
+        <b>Pusat pemerintahan:</b> Kumurkek<br>
+        <b>Peran dalam prototype:</b> wilayah distribusi fokus dan node SPPG/hub/sekolah.
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>⭐ Kabupaten Tambrauw</h3>
+      <div class="info">
+        <b>Pusat pemerintahan:</b> Fef<br>
+        <b>Peran dalam prototype:</b> wilayah distribusi fokus dengan kebutuhan rute yang
+        mempertimbangkan akses, cuaca, dan jalur alternatif.
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+<section id="weather" class="page">
+  <div class="grid2">
+    <div class="card">
+      <h3>Wilayah Studi — Papua Barat Daya</h3>
+      <div class="info">
+        <b>Kabupaten Maybrat</b><br>
+        Ibu kota: Kumurkek<br>
+        Luas: 5.385,68 km²<br><br>
+        <b>Kabupaten Tambrauw</b><br>
+        Ibu kota: Fef<br>
+        Luas: 11.954,82 km²
+      </div>
+      <p class="footer">Wilayah studi menggunakan kabupaten nyata. Titik sekolah/SPPG dapat ditambahkan sendiri berdasarkan data lapangan resmi.</p>
+    </div>
+    <div class="card">
+      <h3>Kenapa BMKG masuk ke RESILIENT 3T-MBG?</h3>
+      <div class="alert warn"><b>Cuaca → Risiko Distribusi</b><br>
+      Informasi cuaca digunakan sebagai salah satu input untuk menilai risiko perjalanan, terutama ketika rute menggunakan transportasi laut atau melewati wilayah yang sensitif terhadap hujan, kabut, dan kondisi jalan.</div>
+      <div class="info"><b>Catatan penting:</b> website prototype ini tetap dapat digunakan offline. Saat internet tersedia, operator membuka halaman resmi BMKG untuk memperbarui informasi cuaca, lalu memasukkan status cuaca ke sistem sebagai data lokal.</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <h3>Prakiraan Cuaca Resmi BMKG</h3>
+    <div class="grid2">
+      <div class="info">
+        <b>Maybrat</b><br>
+        <span id="maybratWeather">Belum ada data cuaca lokal.</span><br><br>
+        <a class="btn primary" href="https://www.bmkg.go.id/cuaca/prakiraan-cuaca/96.05" target="_blank" rel="noopener">Buka BMKG Maybrat ↗</a>
+      </div>
+      <div class="info">
+        <b>Tambrauw</b><br>
+        <span id="tambrauwWeather">Belum ada data cuaca lokal.</span><br><br>
+        <a class="btn primary" href="https://www.bmkg.go.id/cuaca/prakiraan-cuaca/96.04" target="_blank" rel="noopener">Buka BMKG Tambrauw ↗</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <h3>Input Kondisi Cuaca dari BMKG</h3>
+    <form id="weatherForm">
+      <div class="formgrid">
+        <label>Kabupaten
+          <select id="weatherArea">
+            <option>Maybrat</option>
+            <option>Tambrauw</option>
+          </select>
+        </label>
+        <label>Status cuaca
+          <select id="weatherStatus">
+            <option>Cerah</option>
+            <option>Cerah Berawan</option>
+            <option>Berawan</option>
+            <option>Hujan</option>
+            <option>Hujan Lebat</option>
+            <option>Kabut / Asap</option>
+            <option>Informasi perlu diperbarui</option>
+          </select>
+        </label>
+      </div>
+      <div class="formgrid">
+        <label>Risiko terhadap distribusi
+          <select id="weatherRisk">
+            <option>Rendah</option>
+            <option>Sedang</option>
+            <option>Tinggi</option>
+          </select>
+        </label>
+        <label>Waktu update
+          <input id="weatherTime" type="datetime-local">
+        </label>
+      </div>
+      <label>Catatan operator
+        <textarea id="weatherNote" placeholder="Contoh: hujan diperkirakan meningkatkan waktu tempuh rute darat."></textarea>
+      </label>
+      <div class="buttons">
+        <button class="btn primary" type="submit">Simpan Cuaca Offline</button>
+        <button class="btn" type="button" onclick="refreshBMKGStatus()">Gunakan waktu sekarang</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <h3>Cuaca Terakhir Tersimpan</h3>
+    <div id="weatherLocalList"></div>
+  </div>
+</section>
+
+<section id="route" class="page"><div class="card"><h3>Route Planning Offline</h3><div class="formgrid"><label>Asal<select id="pFrom"></select></label><label>Tujuan<select id="pTo"></select></label></div><div class="buttons" style="margin-top:10px"><button class="btn primary" onclick="findRoutes()">Cari Rute</button></div><div id="routeResults" style="margin-top:12px"></div></div></section>
+
+<section id="risk" class="page"><div class="grid2"><div class="card"><h3>Input Gangguan</h3><form id="riskForm"><label>Jenis gangguan<select id="riskType"><option>Cuaca</option><option>Jalan</option><option>Transportasi laut</option><option>Koneksi</option><option>Operasional</option></select></label><label>Lokasi<input id="riskLoc" required placeholder="Contoh: Perairan Raja Ampat"></label><label>Tingkat<select id="riskLevel"><option>Rendah</option><option>Sedang</option><option>Tinggi</option></select></label><label>Dampak<textarea id="riskNote" placeholder="Jelaskan dampaknya..."></textarea></label><button class="btn primary" type="submit">Simpan Gangguan</button></form></div><div class="card"><h3>Gangguan Tersimpan</h3><div id="riskList"></div></div></div></section>
+
+<section id="capacity" class="page"><div class="card"><h3>Capacity Check</h3><div class="formgrid"><label>Node tujuan<select id="capNode"></select></label><label>Kebutuhan porsi/hari<input id="capNeed" type="number" value="200"></label></div><div class="buttons" style="margin-top:10px"><button class="btn primary" onclick="capacityCheck()">Check Capacity</button></div><div id="capResult" style="margin-top:12px"></div></div></section>
+
+<section id="backup" class="page"><div class="card"><h3>Backup Network</h3><div class="info"><b>Logika:</b> Gangguan → Risk Check → Capacity Check → pilih rute alternatif → distribusi tetap berjalan.</div><div id="backupResult" style="margin-top:12px"></div><button class="btn primary" onclick="buildBackup()">Cari Backup Otomatis</button></div></section>
+
+<section id="backupdata" class="page"><div class="grid2"><div class="card"><h3>💾 Data Offline</h3><div class="alert good"><b>Local Storage aktif</b><br>Data tersimpan di browser perangkat ini dan tetap tersedia saat offline.</div><div class="buttons"><button class="btn primary" onclick="exportData()">Export JSON</button><button class="btn" onclick="document.getElementById('importFile').click()">Import JSON</button><button class="btn danger" onclick="clearAll()">Hapus Semua Data</button></div><input id="importFile" type="file" accept=".json" style="display:none"></div><div class="card"><h3>Catatan Penggunaan</h3><div class="info">1. Saat survei lapangan, buka file ini dari laptop/HP.<br>2. Masukkan node, rute, dan gangguan.<br>3. Tekan Simpan.<br>4. Data langsung masuk ke browser.<br>5. Export JSON untuk membuat salinan cadangan.<br>6. Import JSON di perangkat lain untuk melanjutkan pekerjaan.</div></div></div></section>
+</main>
+
+<script src="script.js"></script>
+</body>
+</html>
