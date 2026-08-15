@@ -1,17 +1,37 @@
 {
   "nodes": [
     {
-      "id": "demo-node",
-      "y": 50,
-      "name": "Test Node",
-      "cap": 100,
+      "id": "2a3d4a35-95d5-440a-9abc-0dee3d744c79",
+      "name": "SPPG serpong",
       "type": "sppg",
+      "area": "Surabaya",
+      "cap": 0,
       "x": 50,
-      "area": "Maybrat",
-      "note": "demo"
+      "y": 50,
+      "note": ""
+    },
+    {
+      "id": "b69c9bd3-86eb-442f-bb46-c2fbd1c3f7fb",
+      "name": "SPPG tanggerang",
+      "type": "sppg",
+      "area": "Jakarta",
+      "cap": 0,
+      "x": 50,
+      "y": 50,
+      "note": ""
     }
   ],
-  "routes": [],
+  "routes": [
+    {
+      "id": "5af2f06d-0489-4c6b-89d0-9aaa2e9c794e",
+      "from": "2a3d4a35-95d5-440a-9abc-0dee3d744c79",
+      "to": "b69c9bd3-86eb-442f-bb46-c2fbd1c3f7fb",
+      "mode": "Darat",
+      "time": 60,
+      "risk": "Rendah",
+      "cap": 0
+    }
+  ],
   "risks": [],
   "weather": []
 }

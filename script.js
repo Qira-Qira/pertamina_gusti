@@ -66,8 +66,19 @@ function refresh(){
  fillSelects();renderTables();renderRisks();renderWeather();drawMaps();
 }
 function fillSelects(){
- ["rFrom","rTo","pFrom","pTo"].forEach(id=>{const s=document.getElementById(id);if(!s)return;s.innerHTML=db.nodes.map(n=>`<option value="${n.id}">${n.name}</option>`).join("")});
- const c=document.getElementById("capNode");if(c)c.innerHTML=db.nodes.map(n=>`<option value="${n.id}">${n.name}</option>`).join("");
+ const buildOptions=(selectedId)=>{
+  const s=document.getElementById(selectedId); if(!s)return;
+  const currentValue=s.value || "";
+  const options=[`<option value="">-- Pilih node --</option>`].concat(db.nodes.map(n=>`<option value="${n.id}" ${currentValue===n.id?"selected":""}>${n.name}</option>`));
+  s.innerHTML=options.join("");
+  if(!db.nodes.some(n=>n.id===currentValue)) s.value="";
+ };
+ ["rFrom","rTo","pFrom","pTo"].forEach(buildOptions);
+ const c=document.getElementById("capNode");if(c){
+  const currentValue=c.value||"";
+  c.innerHTML=[`<option value="">-- Pilih node --</option>`].concat(db.nodes.map(n=>`<option value="${n.id}" ${currentValue===n.id?"selected":""}>${n.name}</option>`)).join("");
+  if(!db.nodes.some(n=>n.id===currentValue)) c.value="";
+ }
 }
 function renderTables(){
  const nt=document.getElementById("nodeTable");if(nt)nt.innerHTML=db.nodes.length?`<table><tr><th>Nama</th><th>Jenis</th><th>Wilayah</th><th>Kapasitas</th><th></th></tr>${db.nodes.map(n=>`<tr><td>${n.name}</td><td>${n.type}</td><td>${n.area||"-"}</td><td>${n.cap||0}</td><td><button class="btn danger" onclick="delNode('${n.id}')">Hapus</button></td></tr>`).join("")}</table>`:"<div class='info'>Belum ada node. Tambahkan data di atas.";
@@ -78,20 +89,21 @@ function name(id){return db.nodes.find(n=>n.id===id)?.name||"Unknown"}
 function delNode(id){db.nodes=db.nodes.filter(n=>n.id!==id);db.routes=db.routes.filter(r=>r.from!==id&&r.to!==id);save()}
 function delRoute(id){db.routes=db.routes.filter(r=>r.id!==id);save()}
 function delRisk(id){db.risks=db.risks.filter(r=>r.id!==id);save()}
-document.getElementById("nodeForm").onsubmit=e=>{e.preventDefault();db.nodes.push({id:crypto.randomUUID(),name:nName.value,type:nType.value,area:nArea.value,cap:+nCap.value,x:+nX.value,y:+nY.value,note:nNote.value});e.target.reset();save();alert("Node tersimpan offline.")};
-document.getElementById("routeForm").onsubmit=e=>{e.preventDefault();if(!rFrom.value||!rTo.value||rFrom.value===rTo.value)return alert("Pilih asal dan tujuan yang berbeda.");db.routes.push({id:crypto.randomUUID(),from:rFrom.value,to:rTo.value,mode:rMode.value,time:+rTime.value,risk:rRisk.value,cap:+rCap.value});e.target.reset();save();alert("Rute tersimpan offline.")};
-document.getElementById("riskForm").onsubmit=e=>{e.preventDefault();db.risks.push({id:crypto.randomUUID(),type:riskType.value,location:riskLoc.value,level:riskLevel.value,note:riskNote.value});e.target.reset();save();alert("Gangguan tersimpan offline.")};
+document.getElementById("nodeForm").onsubmit=e=>{e.preventDefault();const nameEl=document.getElementById("nName"),typeEl=document.getElementById("nType"),areaEl=document.getElementById("nArea"),capEl=document.getElementById("nCap"),xEl=document.getElementById("nX"),yEl=document.getElementById("nY"),noteEl=document.getElementById("nNote");db.nodes.push({id:crypto.randomUUID(),name:nameEl.value,type:typeEl.value,area:areaEl.value,cap:+capEl.value,x:+xEl.value,y:+yEl.value,note:noteEl.value});e.target.reset();save();alert("Node tersimpan offline.")};
+document.getElementById("routeForm").onsubmit=e=>{e.preventDefault();const fromEl=document.getElementById("rFrom"),toEl=document.getElementById("rTo"),modeEl=document.getElementById("rMode"),timeEl=document.getElementById("rTime"),riskEl=document.getElementById("rRisk"),capEl=document.getElementById("rCap");if(!fromEl.value||!toEl.value)return alert("Pilih asal dan tujuan node.");if(fromEl.value===toEl.value)return alert("Asal dan tujuan tidak boleh sama.");if(!db.nodes.some(n=>n.id===fromEl.value)||!db.nodes.some(n=>n.id===toEl.value))return alert("Node asal atau tujuan tidak valid.");db.routes.push({id:crypto.randomUUID(),from:fromEl.value,to:toEl.value,mode:modeEl.value,time:+timeEl.value,risk:riskEl.value,cap:+capEl.value});e.target.reset();fillSelects();save();alert("Rute tersimpan offline.")};
+document.getElementById("riskForm").onsubmit=e=>{e.preventDefault();const typeEl=document.getElementById("riskType"),locEl=document.getElementById("riskLoc"),levelEl=document.getElementById("riskLevel"),noteEl=document.getElementById("riskNote");db.risks.push({id:crypto.randomUUID(),type:typeEl.value,location:locEl.value,level:levelEl.value,note:noteEl.value});e.target.reset();save();alert("Gangguan tersimpan offline.")};
 
 
 document.getElementById("weatherForm").onsubmit=e=>{
  e.preventDefault();
+ const areaEl=document.getElementById("weatherArea"),statusEl=document.getElementById("weatherStatus"),riskEl=document.getElementById("weatherRisk"),timeEl=document.getElementById("weatherTime"),noteEl=document.getElementById("weatherNote");
  const item={
    id:crypto.randomUUID(),
-   area:weatherArea.value,
-   status:weatherStatus.value,
-   risk:weatherRisk.value,
-   time:weatherTime.value || new Date().toISOString().slice(0,16),
-   note:weatherNote.value
+   area:areaEl.value,
+   status:statusEl.value,
+   risk:riskEl.value,
+   time:timeEl.value || new Date().toISOString().slice(0,16),
+   note:noteEl.value
  };
  db.weather.unshift(item);
  db.weather=db.weather.slice(0,20);
@@ -125,11 +137,28 @@ function drawMap(id){
  const lg=document.createElement("div");lg.className="legend";lg.innerHTML="<b>Legenda</b><div><i class='lg' style='background:#27b36d'></i>SPPG</div><div><i class='lg' style='background:#4386e9'></i>Hub</div><div><i class='lg' style='background:#f0a33a'></i>Sekolah</div><div>━━ Darat</div><div style='color:#39b9ef'>╌╌ Laut</div>";map.appendChild(lg);
 }
 function findRoutes(){
- const a=pFrom.value,b=pTo.value;if(!a||!b)return;
- const rs=db.routes.filter(r=>r.from===a&&r.to===b||r.from===b&&r.to===a).sort((x,y)=>x.time-y.time);
+ const fromEl=document.getElementById("pFrom"),toEl=document.getElementById("pTo");
+ const a=fromEl?fromEl.value:"",b=toEl?toEl.value:"";
+ if(!a||!b||a===b){
+  document.getElementById("routeResults").innerHTML="<div class='info'>Pilih asal dan tujuan yang berbeda.</div>";
+  return;
+ }
+ const rs=db.routes.filter(r=>(r.from===a&&r.to===b)||(r.from===b&&r.to===a)).sort((x,y)=>x.time-y.time);
  document.getElementById("routeResults").innerHTML=rs.length?rs.map((r,i)=>`<div class="alert ${r.risk==="Tinggi"?"bad":r.risk==="Sedang"?"warn":"good"}"><b>${i===0?"⭐ MOST RELIABLE — ":""}${r.mode}</b><br>${r.time} menit · Risiko ${r.risk} · Kapasitas ${r.cap} porsi/hari</div>`).join(""):"<div class='info'>Belum ada rute langsung antara node tersebut. Tambahkan rute pada menu Input Data.</div>";
 }
-function capacityCheck(){const n=db.nodes.find(x=>x.id===capNode.value),need=+capNeed.value;if(!n)return;const cap=n.cap||0;document.getElementById("capResult").innerHTML=`<div class="alert ${cap>=need?"good":"bad"}"><b>${cap>=need?"✓ KAPASITAS CUKUP":"! KAPASITAS TIDAK CUKUP"}</b><br>Node: ${n.name}<br>Kebutuhan: ${need} porsi/hari<br>Kapasitas: ${cap} porsi/hari<br>Sisa: ${Math.max(0,cap-need)} porsi/hari</div>`}
+function capacityCheck(){
+ const capNodeEl=document.getElementById("capNode");
+ const capNeedEl=document.getElementById("capNeed");
+ if(!capNodeEl||!capNeedEl)return;
+ const n=db.nodes.find(x=>x.id===capNodeEl.value);
+ const need=+capNeedEl.value;
+ if(!n){
+  document.getElementById("capResult").innerHTML="<div class='info'>Pilih node yang valid terlebih dahulu.</div>";
+  return;
+ }
+ const cap=n.cap||0;
+ document.getElementById("capResult").innerHTML=`<div class="alert ${cap>=need?"good":"bad"}"><b>${cap>=need?"✓ KAPASITAS CUKUP":"! KAPASITAS TIDAK CUKUP"}</b><br>Node: ${n.name}<br>Kebutuhan: ${need} porsi/hari<br>Kapasitas: ${cap} porsi/hari<br>Sisa: ${Math.max(0,cap-need)} porsi/hari</div>`
+}
 function buildBackup(){const good=db.routes.filter(r=>r.risk!="Tinggi").sort((a,b)=>a.time-b.time)[0];document.getElementById("backupResult").innerHTML=good?`<div class="alert good"><b>✓ Backup ditemukan</b><br>${name(good.from)} → ${name(good.to)}<br>Moda: ${good.mode} · ${good.time} menit · Risiko ${good.risk}<br>Kapasitas: ${good.cap} porsi/hari</div>`:"<div class='alert bad'>Belum ada rute backup. Masukkan rute dengan risiko rendah/sedang.</div>"}
 function exportData(){const blob=new Blob([JSON.stringify(db,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="resilient-3t-mbg-backup.json";a.click();URL.revokeObjectURL(a.href)}
 document.getElementById("importFile").onchange=e=>{const f=e.target.files[0];if(!f)return;const reader=new FileReader();reader.onload=()=>{try{const x=JSON.parse(reader.result);if(!x.nodes||!x.routes||!x.risks)throw Error();db=x;save();alert("Data berhasil diimport.");}catch{alert("File JSON tidak valid.")}};reader.readAsText(f)}
