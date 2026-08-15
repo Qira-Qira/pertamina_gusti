@@ -1,4 +1,5 @@
 const KEY="resilient3tmbg_v2";
+const API_URL="/api/data";
 const DEFAULT_DB={nodes:[],routes:[],risks:[],weather:[]};
 function normalizeDb(value){
  const base={...DEFAULT_DB};
@@ -23,18 +24,41 @@ function loadDb(){
   return {...DEFAULT_DB};
  }
 }
+async function fetchDbFromServer(){
+ try{
+  const response=await fetch(API_URL,{method:"GET",headers:{"Content-Type":"application/json"}});
+  if(!response.ok)throw new Error("Server not available");
+  const data=await response.json();
+  return normalizeDb(data);
+ }catch(error){
+  console.warn("Server tidak tersedia, memakai data lokal:",error);
+  return loadDb();
+ }
+}
+async function syncDbToServer(){
+ try{
+  const response=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(db)});
+  if(!response.ok)throw new Error("Save failed");
+  const data=await response.json();
+  db=normalizeDb(data);
+ }catch(error){
+  console.warn("Sinkronisasi server gagal, data tetap tersimpan di browser:",error);
+  localStorage.setItem(KEY,JSON.stringify(normalizeDb(db)));
+ }
+}
 let db=loadDb();
 const titles={dashboard:"Dashboard",input:"Input Data",network:"Network Map",regionalmap:"Peta Papua Barat Daya",weather:"BMKG & Cuaca",route:"Route Planning",risk:"Risk & Alert",capacity:"Capacity Check",backup:"Backup Network",backupdata:"Backup Data"};
 document.querySelectorAll(".nav button").forEach(b=>b.onclick=()=>showPage(b.dataset.page));
 function showPage(id){document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===id));document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id===id));document.getElementById("title").textContent=titles[id];refresh();}
-function save(){
+async function save(){
  try{
   db=normalizeDb(db);
   localStorage.setItem(KEY,JSON.stringify(db));
+  await syncDbToServer();
   refresh();
  }catch(error){
   console.error("Gagal menyimpan data lokal:",error);
-  alert("Gagal menyimpan data di browser. Coba hapus cache atau gunakan browser yang mendukung localStorage.");
+  alert("Gagal menyimpan data. Coba cek server atau browser Anda.");
  }
 }
 function refresh(){
@@ -110,4 +134,8 @@ function buildBackup(){const good=db.routes.filter(r=>r.risk!="Tinggi").sort((a,
 function exportData(){const blob=new Blob([JSON.stringify(db,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="resilient-3t-mbg-backup.json";a.click();URL.revokeObjectURL(a.href)}
 document.getElementById("importFile").onchange=e=>{const f=e.target.files[0];if(!f)return;const reader=new FileReader();reader.onload=()=>{try{const x=JSON.parse(reader.result);if(!x.nodes||!x.routes||!x.risks)throw Error();db=x;save();alert("Data berhasil diimport.");}catch{alert("File JSON tidak valid.")}};reader.readAsText(f)}
 function clearAll(){if(confirm("Hapus semua data lokal?")){db={...DEFAULT_DB};save()}}
-window.addEventListener("resize",drawMaps);refresh();
+window.addEventListener("resize",drawMaps);
+(async function init(){
+  db=await fetchDbFromServer();
+  refresh();
+})();

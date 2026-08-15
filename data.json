@@ -1,0 +1,17 @@
+{
+  "nodes": [
+    {
+      "id": "demo-node",
+      "y": 50,
+      "name": "Test Node",
+      "cap": 100,
+      "type": "sppg",
+      "x": 50,
+      "area": "Maybrat",
+      "note": "demo"
+    }
+  ],
+  "routes": [],
+  "risks": [],
+  "weather": []
+}
