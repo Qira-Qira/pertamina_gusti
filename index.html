@@ -4,12 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>RESILIENT 3T-MBG — Offline</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
 <body>
 <aside class="sidebar">
-<div class="brand"><div class="logo">3T</div><div><b>RESILIENT 3T-MBG</b><br><small>Offline Distribution System</small></div></div>
+<div class="brand"><div class="logo"><img src="assets/favicon.svg" alt="3T"></div><div><b>RESILIENT 3T-MBG</b><br><small>Offline Distribution System</small></div></div>
 <nav class="nav">
 <button class="active" data-page="dashboard"><span>⌂</span>Dashboard</button>
 <button data-page="input"><span>＋</span>Input Data</button>
@@ -56,8 +57,8 @@
 <div class="buttons"><button class="btn primary" type="submit">Simpan Rute</button><button class="btn" type="reset">Reset</button><button class="btn" id="cancelRouteEdit" type="button" onclick="cancelRouteEdit()" hidden>Batal Edit</button></div></form>
 <div class="footer">Rute yang disimpan akan muncul di Network Map dan Route Planning.</div></div></div>
 
-<div class="card" style="margin-top:14px"><h3>Data Node Tersimpan</h3><div id="nodeTable"></div></div>
-<div class="card" style="margin-top:14px"><h3>Data Rute Tersimpan</h3><div id="routeTable"></div></div>
+<div class="card" style="margin-top:14px"><h3>Data Node Tersimpan</h3><div class="table-search"><label for="nodeTableSearch">Cari node atau wilayah</label><input id="nodeTableSearch" type="search" placeholder="Contoh: Ayawasi atau SD Negeri" autocomplete="off"></div><div id="nodeTable"></div></div>
+<div class="card" style="margin-top:14px"><h3>Data Rute Tersimpan</h3><div class="table-search"><label for="routeTableSearch">Cari rute, moda, atau risiko</label><input id="routeTableSearch" type="search" placeholder="Contoh: Darat atau Rendah" autocomplete="off"></div><div id="routeTable"></div></div>
 </section>
 
 <section id="network" class="page"><div class="card"><h3>Network Map — Leaflet</h3><div class="map-search"><label for="mapSearch">Cari nama tempat</label><div class="map-search-row"><input id="mapSearch" type="search" list="mapSearchOptions" placeholder="Contoh: SD Negeri 1 Mare" autocomplete="off"><button class="btn primary" type="button" onclick="searchNetworkPlace()">Cari</button></div><datalist id="mapSearchOptions"></datalist><div id="mapSearchStatus" class="map-search-status" aria-live="polite"></div></div><div id="networkMap" class="map leaflet-map"></div><div class="footer">Peta memakai Leaflet dan tile OpenStreetMap. Data titik dan rute berasal dari penyimpanan sistem.</div></div></section>
