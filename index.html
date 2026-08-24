@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>RESILIENT 3T-MBG — Offline</title>
 <link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
 <body>
 <aside class="sidebar">
@@ -44,22 +45,22 @@
 <form id="nodeForm">
 <div class="formgrid"><label>Nama node<input id="nName" required placeholder="Contoh: SPPG Sorong"></label><label>Jenis<select id="nType"><option value="sppg">SPPG / Dapur</option><option value="hub">Hub Distribusi</option><option value="school">Sekolah</option></select></label></div>
 <div class="formgrid"><label>Wilayah<input id="nArea" placeholder="Contoh: Raja Ampat"></label><label>Kapasitas (porsi/hari)<input id="nCap" type="number" min="0" value="0"></label></div>
-<div class="formgrid"><label>Posisi X (%)<input id="nX" type="number" min="2" max="95" value="50"></label><label>Posisi Y (%)<input id="nY" type="number" min="5" max="90" value="50"></label></div>
+<div class="formgrid"><label>Latitude (opsional)<input id="nLat" type="number" step="any" placeholder="Contoh: -1.294"></label><label>Longitude (opsional)<input id="nLng" type="number" step="any" placeholder="Contoh: 132.295"></label></div>
 <label>Catatan<textarea id="nNote" placeholder="Kondisi jalan, akses laut, jam operasi, dll."></textarea></label>
-<div class="buttons"><button class="btn primary" type="submit">Simpan Node</button><button class="btn" type="reset">Reset</button></div></form></div>
+<div class="buttons"><button class="btn primary" type="submit">Simpan Node</button><button class="btn" type="reset">Reset</button><button class="btn" id="cancelNodeEdit" type="button" onclick="cancelNodeEdit()" hidden>Batal Edit</button></div></form></div>
 
 <div class="card"><h3>＋ Tambah Rute</h3>
 <form id="routeForm"><div class="formgrid"><label>Asal<select id="rFrom"></select></label><label>Tujuan<select id="rTo"></select></label></div>
 <div class="formgrid"><label>Moda<select id="rMode"><option>Darat</option><option>Laut</option><option>Darat + Laut</option></select></label><label>Waktu tempuh (menit)<input id="rTime" type="number" min="0" value="60"></label></div>
 <div class="formgrid"><label>Risiko<select id="rRisk"><option>Rendah</option><option>Sedang</option><option>Tinggi</option></select></label><label>Kapasitas (porsi/hari)<input id="rCap" type="number" min="0" value="0"></label></div>
-<div class="buttons"><button class="btn primary" type="submit">Simpan Rute</button><button class="btn" type="reset">Reset</button></div></form>
+<div class="buttons"><button class="btn primary" type="submit">Simpan Rute</button><button class="btn" type="reset">Reset</button><button class="btn" id="cancelRouteEdit" type="button" onclick="cancelRouteEdit()" hidden>Batal Edit</button></div></form>
 <div class="footer">Rute yang disimpan akan muncul di Network Map dan Route Planning.</div></div></div>
 
 <div class="card" style="margin-top:14px"><h3>Data Node Tersimpan</h3><div id="nodeTable"></div></div>
 <div class="card" style="margin-top:14px"><h3>Data Rute Tersimpan</h3><div id="routeTable"></div></div>
 </section>
 
-<section id="network" class="page"><div class="card"><h3>Network Map — Data Lokal</h3><div id="networkMap" class="map"></div><div class="footer">Titik dan rute diambil dari data yang tersimpan di perangkat. Tidak membutuhkan peta online.</div></div></section>
+<section id="network" class="page"><div class="card"><h3>Network Map — Leaflet</h3><div class="map-search"><label for="mapSearch">Cari nama tempat</label><div class="map-search-row"><input id="mapSearch" type="search" list="mapSearchOptions" placeholder="Contoh: SD Negeri 1 Mare" autocomplete="off"><button class="btn primary" type="button" onclick="searchNetworkPlace()">Cari</button></div><datalist id="mapSearchOptions"></datalist><div id="mapSearchStatus" class="map-search-status" aria-live="polite"></div></div><div id="networkMap" class="map leaflet-map"></div><div class="footer">Peta memakai Leaflet dan tile OpenStreetMap. Data titik dan rute berasal dari penyimpanan sistem.</div></div></section>
 
 
 
@@ -69,45 +70,11 @@
   <div class="card">
     <h3>🗺️ Peta Fokus Wilayah Studi</h3>
     <p style="font-size:10px;color:#68758a">
-      Prototype difokuskan hanya pada <b>Kabupaten Maybrat</b> dan <b>Kabupaten Tambrauw</b>
+      Prototype difokuskan hanya pada <b>Kabupaten Maybrat</b>
       sebagai wilayah studi 3T untuk desain jaringan distribusi MBG.
     </p>
 
-    <div class="two-region-map">
-      <div class="sea-label">PAPUA BARAT DAYA</div>
-
-      <div class="region-block tambrauw-focus">
-        <div class="region-title">KABUPATEN TAMBRAUW</div>
-        <div class="region-capital">Fef</div>
-        <div class="mini-node node-hub">H</div>
-        <div class="mini-node node-school s1">S</div>
-        <div class="mini-node node-school s2">S</div>
-        <div class="mini-line line-a"></div>
-        <div class="mini-line line-b"></div>
-      </div>
-
-      <div class="region-block maybrat-focus">
-        <div class="region-title">KABUPATEN MAYBRAT</div>
-        <div class="region-capital">Kumurkek</div>
-        <div class="mini-node node-sppg">SP</div>
-        <div class="mini-node node-hub h2">H</div>
-        <div class="mini-node node-school s3">S</div>
-        <div class="mini-node node-school s4">S</div>
-        <div class="mini-line line-c"></div>
-        <div class="mini-line line-d"></div>
-      </div>
-
-      <div class="corridor"></div>
-      <div class="corridor-label">KORIDOR DISTRIBUSI KONSEPTUAL</div>
-
-      <div class="map-legend">
-        <b>Legenda prototype</b>
-        <div><i class="legend-dot sppg-dot"></i> SPPG / Dapur</div>
-        <div><i class="legend-dot hub-dot"></i> Hub</div>
-        <div><i class="legend-dot school-dot"></i> Sekolah</div>
-        <div><i class="legend-line"></i> Jalur distribusi</div>
-      </div>
-    </div>
+    <div id="regionalLeafletMap" class="two-region-map leaflet-map" aria-label="Peta Leaflet Kabupaten Maybrat"></div>
 
     <div class="alert warn" style="margin-top:12px">
       <b>Catatan:</b> visual ini adalah peta fokus jaringan konseptual, bukan peta batas
@@ -124,15 +91,6 @@
         <b>Peran dalam prototype:</b> wilayah distribusi fokus dan node SPPG/hub/sekolah.
       </div>
     </div>
-
-    <div class="card">
-      <h3>⭐ Kabupaten Tambrauw</h3>
-      <div class="info">
-        <b>Pusat pemerintahan:</b> Fef<br>
-        <b>Peran dalam prototype:</b> wilayah distribusi fokus dengan kebutuhan rute yang
-        mempertimbangkan akses, cuaca, dan jalur alternatif.
-      </div>
-    </div>
   </div>
 </section>
 
@@ -145,10 +103,7 @@
       <div class="info">
         <b>Kabupaten Maybrat</b><br>
         Ibu kota: Kumurkek<br>
-        Luas: 5.385,68 km²<br><br>
-        <b>Kabupaten Tambrauw</b><br>
-        Ibu kota: Fef<br>
-        Luas: 11.954,82 km²
+        Luas: 5.385,68 km²
       </div>
       <p class="footer">Wilayah studi menggunakan kabupaten nyata. Titik sekolah/SPPG dapat ditambahkan sendiri berdasarkan data lapangan resmi.</p>
     </div>
@@ -168,11 +123,6 @@
         <span id="maybratWeather">Belum ada data cuaca lokal.</span><br><br>
         <a class="btn primary" href="https://www.bmkg.go.id/cuaca/prakiraan-cuaca/96.05" target="_blank" rel="noopener">Buka BMKG Maybrat ↗</a>
       </div>
-      <div class="info">
-        <b>Tambrauw</b><br>
-        <span id="tambrauwWeather">Belum ada data cuaca lokal.</span><br><br>
-        <a class="btn primary" href="https://www.bmkg.go.id/cuaca/prakiraan-cuaca/96.04" target="_blank" rel="noopener">Buka BMKG Tambrauw ↗</a>
-      </div>
     </div>
   </div>
 
@@ -183,7 +133,6 @@
         <label>Kabupaten
           <select id="weatherArea">
             <option>Maybrat</option>
-            <option>Tambrauw</option>
           </select>
         </label>
         <label>Status cuaca
@@ -237,6 +186,7 @@
 <section id="backupdata" class="page"><div class="grid2"><div class="card"><h3>💾 Data Offline</h3><div class="alert good"><b>Local Storage aktif</b><br>Data tersimpan di browser perangkat ini dan tetap tersedia saat offline.</div><div class="buttons"><button class="btn primary" onclick="exportData()">Export JSON</button><button class="btn" onclick="document.getElementById('importFile').click()">Import JSON</button><button class="btn danger" onclick="clearAll()">Hapus Semua Data</button></div><input id="importFile" type="file" accept=".json" style="display:none"></div><div class="card"><h3>Catatan Penggunaan</h3><div class="info">1. Saat survei lapangan, buka file ini dari laptop/HP.<br>2. Masukkan node, rute, dan gangguan.<br>3. Tekan Simpan.<br>4. Data langsung masuk ke browser.<br>5. Export JSON untuk membuat salinan cadangan.<br>6. Import JSON di perangkat lain untuk melanjutkan pekerjaan.</div></div></div></section>
 </main>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="script.js"></script>
 </body>
 </html>
