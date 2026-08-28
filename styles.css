@@ -698,6 +698,38 @@ textarea {
   font-size: 9px;
 }
 
+.map-cluster-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 7px;
+}
+
+.map-cluster-controls span {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.cluster-legend {
+  padding: 9px 11px;
+  border: 1px solid #cfd9e3;
+  border-radius: 8px;
+  background: #fffffff2;
+  color: #172235;
+  font-size: 9px;
+  line-height: 1.8;
+  box-shadow: 0 2px 8px #18355b22;
+}
+
+.cluster-legend i {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-right: 5px;
+  border-radius: 50%;
+}
+
 .two-region-map.leaflet-map {
   height: clamp(320px, 48vw, 560px);
 }

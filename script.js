@@ -5,8 +5,10 @@ let editingNodeId=null;
 let editingRouteId=null;
 const leafletMaps={};
 const routeGeometryCache=new Map();
+let clusteringEnabled=true;
 const ROUTING_URL="https://router.project-osrm.org/route/v1/driving";
 const PAPUA_BOUNDS={south:-2.5,north:0.2,west:129.5,east:133.5};
+const CLUSTER_COLORS=["#d94841","#7b61a8","#008c95","#d17a00","#2f7d32","#b23a8f"];
 function createId(){return typeof crypto!=="undefined"&&typeof crypto.randomUUID==="function"?crypto.randomUUID():`node-${Date.now()}-${Math.random().toString(36).slice(2,10)}`}
 function normalizeDb(value){
  const base={...DEFAULT_DB};
@@ -54,7 +56,7 @@ async function syncDbToServer(){
  }
 }
 let db=loadDb();
-const titles={dashboard:"Dashboard",input:"Input Data",network:"Network Map",regionalmap:"Peta Papua Barat Daya",weather:"BMKG & Cuaca",route:"Route Planning",risk:"Risk & Alert",capacity:"Capacity Check",backup:"Backup Network",backupdata:"Backup Data"};
+const titles={dashboard:"Dashboard",input:"Input Data",network:"Network Map",weather:"BMKG & Cuaca",route:"Route Planning",risk:"Risk & Alert",capacity:"Capacity Check",backup:"Backup Network",backupdata:"Backup Data"};
 document.querySelectorAll(".nav button").forEach(b=>b.onclick=()=>showPage(b.dataset.page));
 function showPage(id){document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===id));document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id===id));document.getElementById("title").textContent=titles[id];refresh();}
 async function save(){
@@ -70,8 +72,9 @@ async function save(){
 }
 function refresh(){
  document.getElementById("mNodes").textContent=db.nodes.length;document.getElementById("mRoutes").textContent=db.routes.length;document.getElementById("mRisk").textContent=db.risks.length;document.getElementById("mSaved").textContent=db.nodes.length+db.routes.length+db.risks.length;
- fillSelects();renderTables();renderRisks();renderWeather();renderMapSearchOptions();drawMaps();
+ fillSelects();renderTables();renderRisks();renderWeather();renderMapSearchOptions();updateClusterControl();drawMaps();
 }
+function updateClusterControl(){const button=document.getElementById("clusterToggle"),status=document.getElementById("clusterStatus");if(button)button.textContent=clusteringEnabled?"Sembunyikan Clustering":"Tampilkan Clustering SPPG";if(status)status.textContent=clusteringEnabled?"Sekolah dikelompokkan ke SPPG terdekat.":"Warna marker kembali ke tipe objek."}
 function renderMapSearchOptions(){
  const options=document.getElementById("mapSearchOptions");if(!options)return;
  options.innerHTML=db.nodes.map(node=>`<option value="${node.name}">${node.area||""}</option>`).join("");
@@ -84,7 +87,8 @@ function fillSelects(){
   s.innerHTML=options.join("");
   if(!db.nodes.some(n=>n.id===currentValue)) s.value="";
  };
- ["rFrom","rTo","pFrom","pTo"].forEach(buildOptions);
+ ["pFrom","pTo"].forEach(buildOptions);
+ const routeOptions=document.getElementById("routeNodeOptions");if(routeOptions)routeOptions.innerHTML=db.nodes.map(n=>`<option value="${n.name}">${n.area||""}</option>`).join("");
  const c=document.getElementById("capNode");if(c){
   const currentValue=c.value||"";
   c.innerHTML=[`<option value="">-- Pilih node --</option>`].concat(db.nodes.map(n=>`<option value="${n.id}" ${currentValue===n.id?"selected":""}>${n.name}</option>`)).join("");
@@ -114,7 +118,7 @@ function cancelNodeEdit(){editingNodeId=null;document.getElementById("nodeForm")
 function editRoute(id){
  const r=db.routes.find(item=>item.id===id);if(!r)return;
  editingRouteId=id;fillSelects();
- document.getElementById("rFrom").value=r.from;document.getElementById("rTo").value=r.to;document.getElementById("rMode").value=r.mode||"Darat";document.getElementById("rTime").value=r.time||0;document.getElementById("rRisk").value=r.risk||"Rendah";document.getElementById("rCap").value=r.cap||0;
+ document.getElementById("rFrom").value=name(r.from);document.getElementById("rTo").value=name(r.to);document.getElementById("rMode").value=r.mode||"Darat";document.getElementById("rRisk").value=r.risk||"Rendah";
  document.getElementById("cancelRouteEdit").hidden=false;document.getElementById("rFrom").focus();
 }
 function cancelRouteEdit(){editingRouteId=null;document.getElementById("routeForm").reset();fillSelects();document.getElementById("cancelRouteEdit").hidden=true}
@@ -124,7 +128,8 @@ document.getElementById("nodeForm").onreset=()=>{editingNodeId=null;document.get
 document.getElementById("routeForm").onreset=()=>{editingRouteId=null;document.getElementById("cancelRouteEdit").hidden=true};
 function fieldValue(form,id){return form.querySelector(`#${id}`)?.value??""}
 document.getElementById("nodeForm").onsubmit=e=>{e.preventDefault();const form=e.currentTarget,name=fieldValue(form,"nName").trim(),type=fieldValue(form,"nType"),area=fieldValue(form,"nArea").trim(),cap=fieldValue(form,"nCap"),x=fieldValue(form,"nX"),y=fieldValue(form,"nY"),lat=fieldValue(form,"nLat"),lng=fieldValue(form,"nLng"),note=fieldValue(form,"nNote").trim();if(!name){alert("Nama node wajib diisi.");return}const data={name,type:type||"sppg",area,cap:+cap||0,x:+x||50,y:+y||50,lat:lat===""?null:+lat,lng:lng===""?null:+lng,note};if(editingNodeId){const node=db.nodes.find(item=>item.id===editingNodeId);if(node)Object.assign(node,data)}else db.nodes.push({id:createId(),...data});cancelNodeEdit();save();alert("Node tersimpan offline.")};
-document.getElementById("routeForm").onsubmit=e=>{e.preventDefault();const fromEl=document.getElementById("rFrom"),toEl=document.getElementById("rTo"),modeEl=document.getElementById("rMode"),timeEl=document.getElementById("rTime"),riskEl=document.getElementById("rRisk"),capEl=document.getElementById("rCap");if(!fromEl.value||!toEl.value)return alert("Pilih asal dan tujuan node.");if(fromEl.value===toEl.value)return alert("Asal dan tujuan tidak boleh sama.");if(!db.nodes.some(n=>n.id===fromEl.value)||!db.nodes.some(n=>n.id===toEl.value))return alert("Node asal atau tujuan tidak valid.");const data={from:fromEl.value,to:toEl.value,mode:modeEl.value,time:+timeEl.value,risk:riskEl.value,cap:+capEl.value};if(editingRouteId){const route=db.routes.find(item=>item.id===editingRouteId);if(route)Object.assign(route,data)}else db.routes.push({id:crypto.randomUUID(),...data});cancelRouteEdit();save();alert("Rute tersimpan offline.")};
+function resolveNode(value){const query=value.trim().toLocaleLowerCase();return db.nodes.find(node=>node.id===value||node.name.toLocaleLowerCase()===query)}
+document.getElementById("routeForm").onsubmit=e=>{e.preventDefault();const form=e.currentTarget,fromValue=fieldValue(form,"rFrom"),toValue=fieldValue(form,"rTo"),fromNode=resolveNode(fromValue),toNode=resolveNode(toValue);if(!fromNode||!toNode)return alert("Pilih asal dan tujuan dari daftar node yang tersedia.");if(fromNode.id===toNode.id)return alert("Asal dan tujuan tidak boleh sama.");const data={from:fromNode.id,to:toNode.id,mode:fieldValue(form,"rMode")||"Darat",time:+fieldValue(form,"rTime")||0,risk:fieldValue(form,"rRisk")||"Rendah",cap:+fieldValue(form,"rCap")||0};if(editingRouteId){const route=db.routes.find(item=>item.id===editingRouteId);if(route)Object.assign(route,data)}else db.routes.push({id:createId(),...data});cancelRouteEdit();save();alert("Rute tersimpan offline.")};
 document.getElementById("riskForm").onsubmit=e=>{e.preventDefault();const typeEl=document.getElementById("riskType"),locEl=document.getElementById("riskLoc"),levelEl=document.getElementById("riskLevel"),noteEl=document.getElementById("riskNote");db.risks.push({id:crypto.randomUUID(),type:typeEl.value,location:locEl.value,level:levelEl.value,note:noteEl.value});e.target.reset();save();alert("Gangguan tersimpan offline.")};
 
 
@@ -168,6 +173,23 @@ function nodeLatLng(node){
  return [PAPUA_BOUNDS.north-y*(PAPUA_BOUNDS.north-PAPUA_BOUNDS.south),PAPUA_BOUNDS.west+x*(PAPUA_BOUNDS.east-PAPUA_BOUNDS.west)];
 }
 function markerColor(type){return type==="sppg"?"#27b36d":type==="hub"?"#4386e9":"#f0a33a"}
+function coordinateDistance(first,second){
+ const radians=value=>value*Math.PI/180,earthRadius=6371,latDelta=radians(second[0]-first[0]),lngDelta=radians(second[1]-first[1]);
+ const a=Math.sin(latDelta/2)**2+Math.cos(radians(first[0]))*Math.cos(radians(second[0]))*Math.sin(lngDelta/2)**2;
+ return earthRadius*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+function buildClusters(nodes){
+ const sppgs=nodes.filter(node=>node.type==="sppg");
+ const assignments=new Map();
+ if(!sppgs.length)return {sppgs,assignments};
+ nodes.filter(node=>node.type!=="sppg").forEach(node=>{
+  const point=nodeLatLng(node),nearest=sppgs.reduce((best,sppg)=>coordinateDistance(point,nodeLatLng(sppg))<best.distance?{sppg,distance:coordinateDistance(point,nodeLatLng(sppg))}:best,{sppg:sppgs[0],distance:Infinity});
+  assignments.set(node.id,nearest.sppg.id);
+ });
+ return {sppgs,assignments};
+}
+function clusterColor(sppgId,sppgs){return CLUSTER_COLORS[Math.max(0,sppgs.findIndex(node=>node.id===sppgId))%CLUSTER_COLORS.length]}
+function toggleClusters(){clusteringEnabled=!clusteringEnabled;updateClusterControl();drawMaps()}
 function routeColor(route){return route.risk==="Tinggi"?"#e65a5a":route.mode.includes("Laut")?"#159bc7":"#2873df"}
 function routeCacheKey(from,to){return `${from[0].toFixed(6)},${from[1].toFixed(6)}:${to[0].toFixed(6)},${to[1].toFixed(6)}`}
 async function getRoadGeometry(from,to){
@@ -195,19 +217,31 @@ async function drawMap(id){
   map={instance:leafletMap,layer:L.layerGroup().addTo(leafletMap),markers:new Map(),drawVersion:0};leafletMaps[id]=map;
  }else map.instance.invalidateSize();
  const leafletMap=map.instance;const drawVersion=++map.drawVersion;
+ if(map.clusterLegend){leafletMap.removeControl(map.clusterLegend);map.clusterLegend=null}
  map.layer.clearLayers();
  map.markers.clear();
  const positions=new Map(db.nodes.map(node=>[node.id,nodeLatLng(node)]));
- const routeLayers=await Promise.all(db.routes.map(async route=>{
+ const clusters=buildClusters(db.nodes);
+  await Promise.all(db.routes.map(async route=>{
   const from=positions.get(route.from),to=positions.get(route.to);if(!from||!to)return;
   const geometry=route.mode.includes("Laut")?[from,to]:await getRoadGeometry(from,to);
   return L.polyline(geometry,{color:routeColor(route),weight:route.risk==="Tinggi"?5:4,dashArray:route.mode.includes("Laut")?"8 8":null}).bindTooltip(`${name(route.from)} → ${name(route.to)}<br>${route.mode} · ${route.time} menit · Risiko ${route.risk}`).addTo(map.layer);
  }));
  if(drawVersion!==map.drawVersion)return;
+ if(id==="networkMap"&&clusteringEnabled){
+  db.nodes.filter(node=>node.type!=="sppg").forEach(node=>{
+   const sppgId=clusters.assignments.get(node.id),from=positions.get(node.id),to=positions.get(sppgId);if(!from||!to)return;
+   L.polyline([from,to],{color:clusterColor(sppgId,clusters.sppgs),weight:2,dashArray:"4 7",opacity:.55}).addTo(map.layer);
+  });
+ }
  db.nodes.forEach(node=>{
   const point=positions.get(node.id);if(!point)return;
-  const marker=L.circleMarker(point,{radius:8,color:"#fff",weight:2,fillColor:markerColor(node.type),fillOpacity:1}).bindPopup(`<b>${node.name}</b><br>${node.area||"Wilayah tidak diisi"}<br>Kapasitas: ${node.cap||0} porsi/hari`).addTo(map.layer);map.markers.set(node.id,marker);
+  const assignedSppg=clusters.assignments.get(node.id),fillColor=id==="networkMap"&&clusteringEnabled&&node.type!=="sppg"?clusterColor(assignedSppg,clusters.sppgs):markerColor(node.type),clusterName=assignedSppg?name(assignedSppg):"-";
+  const marker=L.circleMarker(point,{radius:node.type==="sppg"?10:8,color:"#fff",weight:2,fillColor,fillOpacity:1}).bindPopup(`<b>${node.name}</b><br>${node.area||"Wilayah tidak diisi"}<br>Kapasitas: ${node.cap||0} porsi/hari${assignedSppg?`<br>Cluster: ${clusterName}`:""}`).addTo(map.layer);map.markers.set(node.id,marker);
  });
+ if(id==="networkMap"&&clusteringEnabled){
+  const legend=L.control({position:"topright"});legend.onAdd=()=>{const element=L.DomUtil.create("div","cluster-legend");element.innerHTML=`<b>Cluster SPPG</b>${clusters.sppgs.map(sppg=>`<div><i style="background:${clusterColor(sppg.id,clusters.sppgs)}"></i>${sppg.name}</div>`).join("")}`;return element};legend.addTo(leafletMap);map.clusterLegend=legend;
+ }
  if(id==="regionalLeafletMap")leafletMap.setView([-1.2,131.6],8);
  else if(db.nodes.length)leafletMap.fitBounds(L.latLngBounds([...positions.values()]),{padding:[25,25],maxZoom:12});
 }

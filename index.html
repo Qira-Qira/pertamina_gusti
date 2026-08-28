@@ -15,7 +15,6 @@
 <button class="active" data-page="dashboard"><span>⌂</span>Dashboard</button>
 <button data-page="input"><span>＋</span>Input Data</button>
 <button data-page="network"><span>⌘</span>Network Map</button>
-<button data-page="regionalmap"><span>▦</span>Peta Papua Barat Daya</button>
 <button data-page="weather"><span>☁</span>BMKG & Cuaca</button>
 <button data-page="route"><span>➤</span>Route Planning</button>
 <button data-page="risk"><span>⚠</span>Risk & Alert</button>
@@ -51,9 +50,10 @@
 <div class="buttons"><button class="btn primary" type="submit">Simpan Node</button><button class="btn" type="reset">Reset</button><button class="btn" id="cancelNodeEdit" type="button" onclick="cancelNodeEdit()" hidden>Batal Edit</button></div></form></div>
 
 <div class="card"><h3>＋ Tambah Rute</h3>
-<form id="routeForm"><div class="formgrid"><label>Asal<select id="rFrom"></select></label><label>Tujuan<select id="rTo"></select></label></div>
-<div class="formgrid"><label>Moda<select id="rMode"><option>Darat</option><option>Laut</option><option>Darat + Laut</option></select></label><label>Waktu tempuh (menit)<input id="rTime" type="number" min="0" value="60"></label></div>
-<div class="formgrid"><label>Risiko<select id="rRisk"><option>Rendah</option><option>Sedang</option><option>Tinggi</option></select></label><label>Kapasitas (porsi/hari)<input id="rCap" type="number" min="0" value="0"></label></div>
+<form id="routeForm"><div class="formgrid"><label>Asal<input id="rFrom" list="routeNodeOptions" required placeholder="Ketik nama asal"></label><label>Tujuan<input id="rTo" list="routeNodeOptions" required placeholder="Ketik nama tujuan"></label></div>
+<datalist id="routeNodeOptions"></datalist>
+<div class="formgrid"><label>Moda<select id="rMode"><option>Darat</option><option>Laut</option><option>Darat + Laut</option></select></label></div>
+<div class="formgrid"><label>Risiko<select id="rRisk"><option>Rendah</option><option>Sedang</option><option>Tinggi</option></select></label></div>
 <div class="buttons"><button class="btn primary" type="submit">Simpan Rute</button><button class="btn" type="reset">Reset</button><button class="btn" id="cancelRouteEdit" type="button" onclick="cancelRouteEdit()" hidden>Batal Edit</button></div></form>
 <div class="footer">Rute yang disimpan akan muncul di Network Map dan Route Planning.</div></div></div>
 
@@ -61,40 +61,7 @@
 <div class="card" style="margin-top:14px"><h3>Data Rute Tersimpan</h3><div class="table-search"><label for="routeTableSearch">Cari rute, moda, atau risiko</label><input id="routeTableSearch" type="search" placeholder="Contoh: Darat atau Rendah" autocomplete="off"></div><div id="routeTable"></div></div>
 </section>
 
-<section id="network" class="page"><div class="card"><h3>Network Map — Leaflet</h3><div class="map-search"><label for="mapSearch">Cari nama tempat</label><div class="map-search-row"><input id="mapSearch" type="search" list="mapSearchOptions" placeholder="Contoh: SD Negeri 1 Mare" autocomplete="off"><button class="btn primary" type="button" onclick="searchNetworkPlace()">Cari</button></div><datalist id="mapSearchOptions"></datalist><div id="mapSearchStatus" class="map-search-status" aria-live="polite"></div></div><div id="networkMap" class="map leaflet-map"></div><div class="footer">Peta memakai Leaflet dan tile OpenStreetMap. Data titik dan rute berasal dari penyimpanan sistem.</div></div></section>
-
-
-
-
-
-<section id="regionalmap" class="page">
-  <div class="card">
-    <h3>🗺️ Peta Fokus Wilayah Studi</h3>
-    <p style="font-size:10px;color:#68758a">
-      Prototype difokuskan hanya pada <b>Kabupaten Maybrat</b>
-      sebagai wilayah studi 3T untuk desain jaringan distribusi MBG.
-    </p>
-
-    <div id="regionalLeafletMap" class="two-region-map leaflet-map" aria-label="Peta Leaflet Kabupaten Maybrat"></div>
-
-    <div class="alert warn" style="margin-top:12px">
-      <b>Catatan:</b> visual ini adalah peta fokus jaringan konseptual, bukan peta batas
-      administrasi berskala. Titik SPPG, hub, dan sekolah pada prototype harus diganti
-      dengan koordinat/data resmi ketika data lapangan sudah tersedia.
-    </div>
-  </div>
-
-  <div class="grid2">
-    <div class="card">
-      <h3>⭐ Kabupaten Maybrat</h3>
-      <div class="info">
-        <b>Pusat pemerintahan:</b> Kumurkek<br>
-        <b>Peran dalam prototype:</b> wilayah distribusi fokus dan node SPPG/hub/sekolah.
-      </div>
-    </div>
-  </div>
-</section>
-
+<section id="network" class="page"><div class="card"><h3>Network Map — Leaflet</h3><div class="map-search"><label for="mapSearch">Cari nama tempat</label><div class="map-search-row"><input id="mapSearch" type="search" list="mapSearchOptions" placeholder="Contoh: SD Negeri 1 Mare" autocomplete="off"><button class="btn primary" type="button" onclick="searchNetworkPlace()">Cari</button></div><datalist id="mapSearchOptions"></datalist><div id="mapSearchStatus" class="map-search-status" aria-live="polite"></div><div class="map-cluster-controls"><button id="clusterToggle" class="btn" type="button" onclick="toggleClusters()">Tampilkan Clustering SPPG</button><span id="clusterStatus" aria-live="polite"></span></div></div><div id="networkMap" class="map leaflet-map"></div><div class="footer">Peta memakai Leaflet dan tile OpenStreetMap. Data titik dan rute berasal dari penyimpanan sistem.</div></div></section>
 
 
 <section id="weather" class="page">
