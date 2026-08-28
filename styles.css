@@ -77,10 +77,16 @@ body {
   background: #234873;
   color: #fff;
 }
-.nav span {
+.nav i {
   display: inline-block;
   width: 23px;
+  color: #9fc2e8;
   font-size: 14px;
+  text-align: center;
+}
+.nav button:hover i,
+.nav button.active i {
+  color: #fff;
 }
 .side {
   position: absolute;
@@ -383,8 +389,9 @@ textarea {
     font-size: 0;
     text-align: center;
   }
-  .nav span {
+  .nav i {
     width: auto;
+    font-size: 16px;
   }
   .main {
     margin-left: 68px;
