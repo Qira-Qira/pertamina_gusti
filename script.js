@@ -342,8 +342,43 @@ function capacityCheck(){
  document.getElementById("capResult").innerHTML=`<div class="alert ${cap>=need?"good":"bad"}"><b>${cap>=need?"✓ KAPASITAS CUKUP":"! KAPASITAS TIDAK CUKUP"}</b><br>Node: ${n.name}<br>Kebutuhan: ${need} porsi/hari<br>Kapasitas: ${cap} porsi/hari<br>Sisa: ${Math.max(0,cap-need)} porsi/hari</div>`
 }
 function buildBackup(){const good=db.routes.filter(r=>r.risk!="Tinggi").sort((a,b)=>a.time-b.time)[0];document.getElementById("backupResult").innerHTML=good?`<div class="alert good"><b>✓ Backup ditemukan</b><br>${name(good.from)} → ${name(good.to)}<br>Moda: ${good.mode} · ${good.time} menit · Risiko ${good.risk}<br>Kapasitas: ${good.cap} porsi/hari</div>`:"<div class='alert bad'>Belum ada rute backup. Masukkan rute dengan risiko rendah/sedang.</div>"}
-function exportData(){const blob=new Blob([JSON.stringify(db,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="resilient-3t-mbg-backup.json";a.click();URL.revokeObjectURL(a.href)}
-document.getElementById("importFile").onchange=e=>{const f=e.target.files[0];if(!f)return;const reader=new FileReader();reader.onload=()=>{try{const x=JSON.parse(reader.result);if(!x.nodes||!x.routes||!x.risks)throw Error();db=x;save();alert("Data berhasil diimport.");}catch{alert("File JSON tidak valid.")}};reader.readAsText(f)}
+const CSV_COLUMNS=["collection","id","name","type","area","cap","x","y","lat","lng","note","from","to","mode","time","risk","distance","location","status"];
+function csvEscape(value){const text=value==null?"":String(value);return /[",\r\n]/.test(text)?`"${text.replace(/"/g,'""')}"`:text}
+function csvRow(values){return values.map(csvEscape).join(",")}
+function exportData(){
+ const rows=[csvRow(CSV_COLUMNS)];
+ const addRows=(collection,items)=>items.forEach(item=>rows.push(csvRow([collection,...CSV_COLUMNS.slice(1).map(column=>item[column]??"")])));
+ addRows("node",db.nodes);addRows("route",db.routes);addRows("risk",db.risks);addRows("weather",db.weather);
+ const blob=new Blob(["\ufeff"+rows.join("\r\n")],{type:"text/csv;charset=utf-8"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="resilient-3t-mbg-backup.csv";a.click();URL.revokeObjectURL(a.href)
+}
+function parseCsv(text){
+ const rows=[],row=[];let value="",quoted=false;
+ for(let index=0;index<text.length;index++){
+  const character=text[index],next=text[index+1];
+  if(quoted){if(character==='"'&&next==='"'){value+='"';index++}else if(character==='"')quoted=false;else value+=character}
+  else if(character==='"')quoted=true;
+  else if(character===","){row.push(value);value=""}
+  else if(character==="\n"){row.push(value.replace(/\r$/,""));rows.push(row.splice(0));value=""}
+  else value+=character;
+ }
+ if(value!==""||row.length){row.push(value.replace(/\r$/,""));rows.push(row)}
+ return rows;
+}
+function importCsv(text){
+ const rows=parseCsv(text.replace(/^\ufeff/,""));if(!rows.length)throw Error();
+ const header=rows.shift();if(CSV_COLUMNS.some((column,index)=>header[index]!==column))throw Error();
+ const imported={nodes:[],routes:[],risks:[],weather:[]},collectionNames={node:"nodes",route:"routes",risk:"risks",weather:"weather"};
+ rows.filter(row=>row.some(Boolean)).forEach(row=>{
+  const item=Object.fromEntries(CSV_COLUMNS.map((column,index)=>[column,row[index]??""])),collection=item.collection;
+  delete item.collection;
+  const target=collectionNames[collection];if(!target)throw Error();
+  const numericColumns=collection==="node"?["cap","x","y","lat","lng"]:collection==="route"?["time","distance"]:[];
+  numericColumns.forEach(column=>{if(item[column]==="")delete item[column];else item[column]=Number(item[column])});
+  imported[target].push(item);
+ });
+ return normalizeDb(imported);
+}
+document.getElementById("importFile").onchange=e=>{const f=e.target.files[0];if(!f)return;const reader=new FileReader();reader.onload=()=>{try{db=importCsv(reader.result);save();alert("Data berhasil diimport dari CSV.")}catch{alert("File CSV tidak valid.")}e.target.value=""};reader.readAsText(f)}
 function clearAll(){if(confirm("Hapus semua data lokal?")){db={...DEFAULT_DB};save()}}
 window.addEventListener("resize",drawMaps);
 (async function init(){
