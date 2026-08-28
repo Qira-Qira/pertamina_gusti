@@ -16,10 +16,8 @@
 <button data-page="input"><span>＋</span>Input Data</button>
 <button data-page="network"><span>⌘</span>Network Map</button>
 <button data-page="weather"><span>☁</span>BMKG & Cuaca</button>
-<button data-page="route"><span>➤</span>Route Planning</button>
 <button data-page="risk"><span>⚠</span>Risk & Alert</button>
 <button data-page="capacity"><span>▣</span>Capacity Check</button>
-<button data-page="backup"><span>↻</span>Backup Network</button>
 <button data-page="backupdata"><span>⇄</span>Backup Data</button>
 </nav>
 <div class="side">100% berjalan lokal.<br>Data tersimpan di browser perangkat.</div>
@@ -54,11 +52,11 @@
 <datalist id="routeNodeOptions"></datalist>
 <div class="formgrid"><label>Moda<select id="rMode"><option>Darat</option><option>Laut</option><option>Darat + Laut</option></select></label></div>
 <div class="formgrid"><label>Risiko<select id="rRisk"><option>Rendah</option><option>Sedang</option><option>Tinggi</option></select></label></div>
-<div class="buttons"><button class="btn primary" type="submit">Simpan Rute</button><button class="btn" type="reset">Reset</button><button class="btn" id="cancelRouteEdit" type="button" onclick="cancelRouteEdit()" hidden>Batal Edit</button></div></form>
-<div class="footer">Rute yang disimpan akan muncul di Network Map dan Route Planning.</div></div></div>
+<div class="buttons"><button class="btn primary" id="saveRouteButton" type="submit">Simpan Rute</button><button class="btn" type="reset">Reset</button><button class="btn" id="cancelRouteEdit" type="button" onclick="cancelRouteEdit()" hidden>Batal Edit</button></div><div id="routeSaveStatus" class="form-status" aria-live="polite"></div></form>
+<div class="footer">Waktu otomatis: mobil mengikuti rute jalan; kapal memakai 20 km/jam. Risiko Sedang menambah 25% dan Tinggi menambah 60%.</div></div></div>
 
-<div class="card" style="margin-top:14px"><h3>Data Node Tersimpan</h3><div class="table-search"><label for="nodeTableSearch">Cari node atau wilayah</label><input id="nodeTableSearch" type="search" placeholder="Contoh: Ayawasi atau SD Negeri" autocomplete="off"></div><div id="nodeTable"></div></div>
-<div class="card" style="margin-top:14px"><h3>Data Rute Tersimpan</h3><div class="table-search"><label for="routeTableSearch">Cari rute, moda, atau risiko</label><input id="routeTableSearch" type="search" placeholder="Contoh: Darat atau Rendah" autocomplete="off"></div><div id="routeTable"></div></div>
+<div class="card" style="margin-top:14px"><h3>Data Node Tersimpan</h3><div class="table-search"><label for="nodeTableSearch">Cari node atau wilayah</label><input id="nodeTableSearch" type="search" placeholder="Contoh: Ayawasi atau SD Negeri" autocomplete="off"></div><div id="nodeTable"></div><div id="nodePagination" class="table-pagination"></div></div>
+<div class="card" style="margin-top:14px"><h3>Data Rute Tersimpan</h3><div class="table-search"><label for="routeTableSearch">Cari rute, moda, atau risiko</label><input id="routeTableSearch" type="search" placeholder="Contoh: Darat atau Rendah" autocomplete="off"></div><div id="routeTable"></div><div id="routePagination" class="table-pagination"></div></div>
 </section>
 
 <section id="network" class="page"><div class="card"><h3>Network Map — Leaflet</h3><div class="map-search"><label for="mapSearch">Cari nama tempat</label><div class="map-search-row"><input id="mapSearch" type="search" list="mapSearchOptions" placeholder="Contoh: SD Negeri 1 Mare" autocomplete="off"><button class="btn primary" type="button" onclick="searchNetworkPlace()">Cari</button></div><datalist id="mapSearchOptions"></datalist><div id="mapSearchStatus" class="map-search-status" aria-live="polite"></div><div class="map-cluster-controls"><button id="clusterToggle" class="btn" type="button" onclick="toggleClusters()">Tampilkan Clustering SPPG</button><span id="clusterStatus" aria-live="polite"></span></div></div><div id="networkMap" class="map leaflet-map"></div><div class="footer">Peta memakai Leaflet dan tile OpenStreetMap. Data titik dan rute berasal dari penyimpanan sistem.</div></div></section>
@@ -143,13 +141,9 @@
   </div>
 </section>
 
-<section id="route" class="page"><div class="card"><h3>Route Planning Offline</h3><div class="formgrid"><label>Asal<select id="pFrom"></select></label><label>Tujuan<select id="pTo"></select></label></div><div class="buttons" style="margin-top:10px"><button class="btn primary" onclick="findRoutes()">Cari Rute</button></div><div id="routeResults" style="margin-top:12px"></div></div></section>
-
 <section id="risk" class="page"><div class="grid2"><div class="card"><h3>Input Gangguan</h3><form id="riskForm"><label>Jenis gangguan<select id="riskType"><option>Cuaca</option><option>Jalan</option><option>Transportasi laut</option><option>Koneksi</option><option>Operasional</option></select></label><label>Lokasi<input id="riskLoc" required placeholder="Contoh: Perairan Raja Ampat"></label><label>Tingkat<select id="riskLevel"><option>Rendah</option><option>Sedang</option><option>Tinggi</option></select></label><label>Dampak<textarea id="riskNote" placeholder="Jelaskan dampaknya..."></textarea></label><button class="btn primary" type="submit">Simpan Gangguan</button></form></div><div class="card"><h3>Gangguan Tersimpan</h3><div id="riskList"></div></div></div></section>
 
 <section id="capacity" class="page"><div class="card"><h3>Capacity Check</h3><div class="formgrid"><label>Node tujuan<select id="capNode"></select></label><label>Kebutuhan porsi/hari<input id="capNeed" type="number" value="200"></label></div><div class="buttons" style="margin-top:10px"><button class="btn primary" onclick="capacityCheck()">Check Capacity</button></div><div id="capResult" style="margin-top:12px"></div></div></section>
-
-<section id="backup" class="page"><div class="card"><h3>Backup Network</h3><div class="info"><b>Logika:</b> Gangguan → Risk Check → Capacity Check → pilih rute alternatif → distribusi tetap berjalan.</div><div id="backupResult" style="margin-top:12px"></div><button class="btn primary" onclick="buildBackup()">Cari Backup Otomatis</button></div></section>
 
 <section id="backupdata" class="page"><div class="grid2"><div class="card"><h3>💾 Data Offline</h3><div class="alert good"><b>Local Storage aktif</b><br>Data tersimpan di browser perangkat ini dan tetap tersedia saat offline.</div><div class="buttons"><button class="btn primary" onclick="exportData()">Export JSON</button><button class="btn" onclick="document.getElementById('importFile').click()">Import JSON</button><button class="btn danger" onclick="clearAll()">Hapus Semua Data</button></div><input id="importFile" type="file" accept=".json" style="display:none"></div><div class="card"><h3>Catatan Penggunaan</h3><div class="info">1. Saat survei lapangan, buka file ini dari laptop/HP.<br>2. Masukkan node, rute, dan gangguan.<br>3. Tekan Simpan.<br>4. Data langsung masuk ke browser.<br>5. Export JSON untuk membuat salinan cadangan.<br>6. Import JSON di perangkat lain untuk melanjutkan pekerjaan.</div></div></div></section>
 </main>

@@ -7,8 +7,13 @@ const leafletMaps={};
 const routeGeometryCache=new Map();
 let clusteringEnabled=true;
 const ROUTING_URL="https://router.project-osrm.org/route/v1/driving";
+const VEHICLE_SPEEDS={"Laut":20,"Darat + Laut":25};
+const RISK_TIME_FACTORS={Rendah:1,Sedang:1.25,Tinggi:1.6};
 const PAPUA_BOUNDS={south:-2.5,north:0.2,west:129.5,east:133.5};
 const CLUSTER_COLORS=["#d94841","#7b61a8","#008c95","#d17a00","#2f7d32","#b23a8f"];
+const TABLE_PAGE_SIZE=5;
+let nodeTablePage=1;
+let routeTablePage=1;
 function createId(){return typeof crypto!=="undefined"&&typeof crypto.randomUUID==="function"?crypto.randomUUID():`node-${Date.now()}-${Math.random().toString(36).slice(2,10)}`}
 function normalizeDb(value){
  const base={...DEFAULT_DB};
@@ -98,15 +103,24 @@ function fillSelects(){
 function renderTables(){
  const nodeQuery=(document.getElementById("nodeTableSearch")?.value||"").trim().toLocaleLowerCase();
  const nodes=db.nodes.filter(n=>[n.name,n.type,n.area,n.note].some(value=>String(value||"").toLocaleLowerCase().includes(nodeQuery)));
- const nt=document.getElementById("nodeTable");if(nt)nt.innerHTML=nodes.length?`<table><tr><th>Nama</th><th>Jenis</th><th>Wilayah</th><th>Kapasitas</th><th></th></tr>${nodes.map(n=>`<tr><td>${n.name}</td><td>${n.type}</td><td>${n.area||"-"}</td><td>${n.cap||0}</td><td><button class="btn" onclick="editNode('${n.id}')">Edit</button> <button class="btn danger" onclick="delNode('${n.id}')">Hapus</button></td></tr>`).join("")}</table>`:(db.nodes.length?"<div class='info'>Node tidak ditemukan.</div>":"<div class='info'>Belum ada node. Tambahkan data di atas.");
+ const nodeTotalPages=Math.max(1,Math.ceil(nodes.length/TABLE_PAGE_SIZE));nodeTablePage=Math.min(nodeTablePage,nodeTotalPages);const nodeStart=(nodeTablePage-1)*TABLE_PAGE_SIZE,nodePageItems=nodes.slice(nodeStart,nodeStart+TABLE_PAGE_SIZE);
+ const nt=document.getElementById("nodeTable");if(nt)nt.innerHTML=nodePageItems.length?`<table><tr><th>Nama</th><th>Jenis</th><th>Wilayah</th><th>Kapasitas</th><th></th></tr>${nodePageItems.map(n=>`<tr><td>${n.name}</td><td>${n.type}</td><td>${n.area||"-"}</td><td>${n.cap||0}</td><td><button class="btn" onclick="editNode('${n.id}')">Edit</button> <button class="btn danger" onclick="delNode('${n.id}')">Hapus</button></td></tr>`).join("")}</table>`:(db.nodes.length?"<div class='info'>Node tidak ditemukan.</div>":"<div class='info'>Belum ada node. Tambahkan data di atas.");
+ renderTablePagination("nodePagination",nodeTablePage,nodeTotalPages,nodes.length,"changeNodeTablePage");
  const routeQuery=(document.getElementById("routeTableSearch")?.value||"").trim().toLocaleLowerCase();
- const routes=db.routes.filter(r=>[name(r.from),name(r.to),r.mode,r.risk,String(r.time),String(r.cap)].some(value=>String(value||"").toLocaleLowerCase().includes(routeQuery)));
- const rt=document.getElementById("routeTable");if(rt)rt.innerHTML=routes.length?`<table><tr><th>Asal</th><th>Tujuan</th><th>Moda</th><th>Waktu</th><th>Risiko</th><th></th></tr>${routes.map(r=>`<tr><td>${name(r.from)}</td><td>${name(r.to)}</td><td>${r.mode}</td><td>${r.time} mnt</td><td>${r.risk}</td><td><button class="btn" onclick="editRoute('${r.id}')">Edit</button> <button class="btn danger" onclick="delRoute('${r.id}')">Hapus</button></td></tr>`).join("")}</table>`:(db.routes.length?"<div class='info'>Rute tidak ditemukan.</div>":"<div class='info'>Belum ada rute.</div>");
+ const routes=db.routes.filter(r=>[name(r.from),name(r.to),r.mode,r.risk,String(r.time),String(r.cap),String(r.distance)].some(value=>String(value||"").toLocaleLowerCase().includes(routeQuery)));
+ const routeTotalPages=Math.max(1,Math.ceil(routes.length/TABLE_PAGE_SIZE));routeTablePage=Math.min(routeTablePage,routeTotalPages);const routeStart=(routeTablePage-1)*TABLE_PAGE_SIZE,routePageItems=routes.slice(routeStart,routeStart+TABLE_PAGE_SIZE);
+ const rt=document.getElementById("routeTable");if(rt)rt.innerHTML=routePageItems.length?`<table><tr><th>Asal</th><th>Tujuan</th><th>Moda</th><th>Jarak</th><th>Waktu</th><th>Risiko</th><th></th></tr>${routePageItems.map(r=>`<tr><td>${name(r.from)}</td><td>${name(r.to)}</td><td>${nameMode(r)}</td><td>${formatDistance(r.distance)}</td><td>${formatDuration(r.time)}</td><td>${r.risk||"Rendah"}</td><td><button class="btn" onclick="editRoute('${r.id}')">Edit</button> <button class="btn danger" onclick="delRoute('${r.id}')">Hapus</button></td></tr>`).join("")}</table>`:(db.routes.length?"<div class='info'>Rute tidak ditemukan.</div>":"<div class='info'>Belum ada rute.</div>");
+ renderTablePagination("routePagination",routeTablePage,routeTotalPages,routes.length,"changeRouteTablePage");
 }
-document.getElementById("nodeTableSearch")?.addEventListener("input",renderTables);
-document.getElementById("routeTableSearch")?.addEventListener("input",renderTables);
+function renderTablePagination(id,currentPage,totalPages,totalItems,changeFunction){const pagination=document.getElementById(id);if(!pagination)return;pagination.innerHTML=`<button class="table-page-arrow" type="button" aria-label="Halaman sebelumnya" onclick="${changeFunction}(${currentPage-1})" ${currentPage<=1?"disabled":""}>←</button><span>Halaman ${currentPage} dari ${totalPages} · ${totalItems} data</span><button class="table-page-arrow" type="button" aria-label="Halaman berikutnya" onclick="${changeFunction}(${currentPage+1})" ${currentPage>=totalPages?"disabled":""}>→</button>`}
+function changeNodeTablePage(page){nodeTablePage=Math.max(1,page);renderTables()}
+function changeRouteTablePage(page){routeTablePage=Math.max(1,page);renderTables()}
+document.getElementById("nodeTableSearch")?.addEventListener("input",()=>{nodeTablePage=1;renderTables()});
+document.getElementById("routeTableSearch")?.addEventListener("input",()=>{routeTablePage=1;renderTables()});
 function renderRisks(){const el=document.getElementById("riskList");if(!el)return;el.innerHTML=db.risks.length?db.risks.map(r=>`<div class="alert ${r.level==="Tinggi"?"bad":r.level==="Sedang"?"warn":"good"}"><b>${r.level} — ${r.type}</b><br>${r.location}<br>${r.note||""}<br><button class="btn danger" onclick="delRisk('${r.id}')">Hapus</button></div>`).join(""):"<div class='info'>Belum ada gangguan.</div>"}
 function name(id){return db.nodes.find(n=>n.id===id)?.name||"Unknown"}
+function nameMode(route){return routeMode(route)}
+function formatDistance(distance){return Number.isFinite(Number(distance))?`${Number(distance).toFixed(2)} km`:"Belum dihitung"}
 function delNode(id){if(editingNodeId===id)cancelNodeEdit();db.nodes=db.nodes.filter(n=>n.id!==id);db.routes=db.routes.filter(r=>r.from!==id&&r.to!==id);save()}
 function editNode(id){
  const n=db.nodes.find(item=>item.id===id);if(!n)return;
@@ -129,7 +143,7 @@ document.getElementById("routeForm").onreset=()=>{editingRouteId=null;document.g
 function fieldValue(form,id){return form.querySelector(`#${id}`)?.value??""}
 document.getElementById("nodeForm").onsubmit=e=>{e.preventDefault();const form=e.currentTarget,name=fieldValue(form,"nName").trim(),type=fieldValue(form,"nType"),area=fieldValue(form,"nArea").trim(),cap=fieldValue(form,"nCap"),x=fieldValue(form,"nX"),y=fieldValue(form,"nY"),lat=fieldValue(form,"nLat"),lng=fieldValue(form,"nLng"),note=fieldValue(form,"nNote").trim();if(!name){alert("Nama node wajib diisi.");return}const data={name,type:type||"sppg",area,cap:+cap||0,x:+x||50,y:+y||50,lat:lat===""?null:+lat,lng:lng===""?null:+lng,note};if(editingNodeId){const node=db.nodes.find(item=>item.id===editingNodeId);if(node)Object.assign(node,data)}else db.nodes.push({id:createId(),...data});cancelNodeEdit();save();alert("Node tersimpan offline.")};
 function resolveNode(value){const query=value.trim().toLocaleLowerCase();return db.nodes.find(node=>node.id===value||node.name.toLocaleLowerCase()===query)}
-document.getElementById("routeForm").onsubmit=e=>{e.preventDefault();const form=e.currentTarget,fromValue=fieldValue(form,"rFrom"),toValue=fieldValue(form,"rTo"),fromNode=resolveNode(fromValue),toNode=resolveNode(toValue);if(!fromNode||!toNode)return alert("Pilih asal dan tujuan dari daftar node yang tersedia.");if(fromNode.id===toNode.id)return alert("Asal dan tujuan tidak boleh sama.");const data={from:fromNode.id,to:toNode.id,mode:fieldValue(form,"rMode")||"Darat",time:+fieldValue(form,"rTime")||0,risk:fieldValue(form,"rRisk")||"Rendah",cap:+fieldValue(form,"rCap")||0};if(editingRouteId){const route=db.routes.find(item=>item.id===editingRouteId);if(route)Object.assign(route,data)}else db.routes.push({id:createId(),...data});cancelRouteEdit();save();alert("Rute tersimpan offline.")};
+document.getElementById("routeForm").onsubmit=async e=>{e.preventDefault();const form=e.currentTarget,button=document.getElementById("saveRouteButton"),status=document.getElementById("routeSaveStatus"),fromValue=fieldValue(form,"rFrom"),toValue=fieldValue(form,"rTo"),fromNode=resolveNode(fromValue),toNode=resolveNode(toValue);if(!fromNode||!toNode)return alert("Pilih asal dan tujuan dari daftar node yang tersedia.");if(fromNode.id===toNode.id)return alert("Asal dan tujuan tidak boleh sama.");if(button)button.disabled=true;if(status)status.textContent="Menghitung jarak, kendaraan, dan risiko...";try{const mode=fieldValue(form,"rMode")||"Darat",risk=fieldValue(form,"rRisk")||"Rendah",routeDraft={mode,risk},info=await getRouteInfo(routeDraft,nodeLatLng(fromNode),nodeLatLng(toNode)),time=calculateRouteTime(info.duration,routeDraft),data={from:fromNode.id,to:toNode.id,mode,time,risk,cap:0,distance:info.distance};if(editingRouteId){const route=db.routes.find(item=>item.id===editingRouteId);if(route)Object.assign(route,data)}else db.routes.push({id:createId(),...data});cancelRouteEdit();await save();if(status)status.textContent=`Jarak: ${formatDistance(info.distance)} · Waktu: ${formatDuration(time)}`;alert("Rute tersimpan offline.")}finally{if(button)button.disabled=false}};
 document.getElementById("riskForm").onsubmit=e=>{e.preventDefault();const typeEl=document.getElementById("riskType"),locEl=document.getElementById("riskLoc"),levelEl=document.getElementById("riskLevel"),noteEl=document.getElementById("riskNote");db.risks.push({id:crypto.randomUUID(),type:typeEl.value,location:locEl.value,level:levelEl.value,note:noteEl.value});e.target.reset();save();alert("Gangguan tersimpan offline.")};
 
 
@@ -173,6 +187,14 @@ function nodeLatLng(node){
  return [PAPUA_BOUNDS.north-y*(PAPUA_BOUNDS.north-PAPUA_BOUNDS.south),PAPUA_BOUNDS.west+x*(PAPUA_BOUNDS.east-PAPUA_BOUNDS.west)];
 }
 function markerColor(type){return type==="sppg"?"#27b36d":type==="hub"?"#4386e9":"#f0a33a"}
+function routeMode(route){return String(route.mode||"Darat")}
+function riskFactor(route){return RISK_TIME_FACTORS[route.risk]||RISK_TIME_FACTORS.Rendah}
+function calculateRouteTime(baseMinutes,route){return Math.max(1,Math.round(baseMinutes*riskFactor(route)))}
+function haversineDistance(first,second){
+  const radians=value=>value*Math.PI/180,earthRadius=6371,latDelta=radians(second[0]-first[0]),lngDelta=radians(second[1]-first[1]);
+  const a=Math.sin(latDelta/2)**2+Math.cos(radians(first[0]))*Math.cos(radians(second[0]))*Math.sin(lngDelta/2)**2;
+  return earthRadius*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
 function coordinateDistance(first,second){
  const radians=value=>value*Math.PI/180,earthRadius=6371,latDelta=radians(second[0]-first[0]),lngDelta=radians(second[1]-first[1]);
  const a=Math.sin(latDelta/2)**2+Math.cos(radians(first[0]))*Math.cos(radians(second[0]))*Math.sin(lngDelta/2)**2;
@@ -190,7 +212,7 @@ function buildClusters(nodes){
 }
 function clusterColor(sppgId,sppgs){return CLUSTER_COLORS[Math.max(0,sppgs.findIndex(node=>node.id===sppgId))%CLUSTER_COLORS.length]}
 function toggleClusters(){clusteringEnabled=!clusteringEnabled;updateClusterControl();drawMaps()}
-function routeColor(route){return route.risk==="Tinggi"?"#e65a5a":route.mode.includes("Laut")?"#159bc7":"#2873df"}
+function routeColor(route){return route.risk==="Tinggi"?"#e65a5a":routeMode(route).includes("Laut")?"#159bc7":"#2873df"}
 function routeCacheKey(from,to){return `${from[0].toFixed(6)},${from[1].toFixed(6)}:${to[0].toFixed(6)},${to[1].toFixed(6)}`}
 async function getRoadGeometry(from,to){
  const key=routeCacheKey(from,to);if(routeGeometryCache.has(key))return routeGeometryCache.get(key);
@@ -205,6 +227,37 @@ async function getRoadGeometry(from,to){
   console.warn("Jalur jalan tidak tersedia, memakai garis langsung:",error);
   routeGeometryCache.set(key,[from,to]);return [from,to];
  }
+}
+async function getRouteInfo(route,from,to){
+ if(routeMode(route).includes("Laut")){
+  const distance=haversineDistance(from,to),speed=VEHICLE_SPEEDS[routeMode(route)]||VEHICLE_SPEEDS.Laut;
+  return {geometry:[from,to],distance,duration:(distance/speed)*60};
+ }
+ const key=`info:${routeCacheKey(from,to)}`;if(routeGeometryCache.has(key))return routeGeometryCache.get(key);
+ try{
+  const response=await fetch(`${ROUTING_URL}/${from[1]},${from[0]};${to[1]},${to[0]}?overview=full&geometries=geojson`);
+  if(!response.ok)throw new Error("Routing service unavailable");
+  const data=await response.json(),result=data.routes?.[0];
+  if(!result?.geometry?.coordinates?.length)throw new Error("No road route found");
+  const info={geometry:result.geometry.coordinates.map(([lng,lat])=>[lat,lng]),distance:result.distance/1000,duration:result.duration/60};
+  routeGeometryCache.set(key,info);return info;
+ }catch(error){
+  console.warn("Info rute tidak tersedia, memakai estimasi langsung:",error);
+  const distance=haversineDistance(from,to),info={geometry:[from,to],distance,duration:(distance/30)*60};
+  routeGeometryCache.set(key,info);return info;
+ }
+}
+function formatDuration(minutes){return Number.isFinite(Number(minutes))?`${Math.max(1,Math.round(Number(minutes)))} menit`:"Belum dihitung"}
+async function updateMissingRouteMetrics(){
+  let changed=false;
+  for(const route of db.routes){
+    if(Number(route.distance)>0&&Number(route.time)>0)continue;
+    const from=db.nodes.find(node=>node.id===route.from),to=db.nodes.find(node=>node.id===route.to);if(!from||!to)continue;
+    const info=await getRouteInfo(route,nodeLatLng(from),nodeLatLng(to));
+    const time=calculateRouteTime(info.duration,route);
+    if(Math.abs(Number(route.distance||0)-info.distance)>0.01||Number(route.time||0)!==time){route.distance=info.distance;route.time=time;changed=true}
+  }
+  if(changed){localStorage.setItem(KEY,JSON.stringify(normalizeDb(db)));await syncDbToServer()}
 }
 function drawMaps(){["dashMap","networkMap","regionalLeafletMap"].forEach(id=>drawMap(id));}
 async function drawMap(id){
@@ -224,8 +277,8 @@ async function drawMap(id){
  const clusters=buildClusters(db.nodes);
   await Promise.all(db.routes.map(async route=>{
   const from=positions.get(route.from),to=positions.get(route.to);if(!from||!to)return;
-  const geometry=route.mode.includes("Laut")?[from,to]:await getRoadGeometry(from,to);
-  return L.polyline(geometry,{color:routeColor(route),weight:route.risk==="Tinggi"?5:4,dashArray:route.mode.includes("Laut")?"8 8":null}).bindTooltip(`${name(route.from)} → ${name(route.to)}<br>${route.mode} · ${route.time} menit · Risiko ${route.risk}`).addTo(map.layer);
+  const info=await getRouteInfo(route,from,to),mode=routeMode(route);
+  return L.polyline(info.geometry,{color:routeColor(route),weight:route.risk==="Tinggi"?5:4,dashArray:mode.includes("Laut")?"8 8":null}).bindTooltip(`${name(route.from)} → ${name(route.to)}<br>${mode} · ${formatDistance(route.distance??info.distance)} · ${formatDuration(route.time??info.duration)} · Risiko ${route.risk||"Rendah"}`).addTo(map.layer);
  }));
  if(drawVersion!==map.drawVersion)return;
  if(id==="networkMap"&&clusteringEnabled){
@@ -269,7 +322,7 @@ function findRoutes(){
   return;
  }
  const rs=db.routes.filter(r=>(r.from===a&&r.to===b)||(r.from===b&&r.to===a)).sort((x,y)=>x.time-y.time);
- document.getElementById("routeResults").innerHTML=rs.length?rs.map((r,i)=>`<div class="alert ${r.risk==="Tinggi"?"bad":r.risk==="Sedang"?"warn":"good"}"><b>${i===0?"⭐ MOST RELIABLE — ":""}${r.mode}</b><br>${r.time} menit · Risiko ${r.risk} · Kapasitas ${r.cap} porsi/hari</div>`).join(""):"<div class='info'>Belum ada rute langsung antara node tersebut. Tambahkan rute pada menu Input Data.</div>";
+ document.getElementById("routeResults").innerHTML=rs.length?rs.map((r,i)=>`<div class="alert ${r.risk==="Tinggi"?"bad":r.risk==="Sedang"?"warn":"good"}"><b>${i===0?"⭐ MOST RELIABLE — ":""}${routeMode(r)}</b><br>Jarak ${formatDistance(r.distance)} · Waktu ${formatDuration(r.time)} · Risiko ${r.risk||"Rendah"} · Kapasitas ${r.cap||0} porsi/hari</div>`).join(""):"<div class='info'>Belum ada rute langsung antara node tersebut. Tambahkan rute pada menu Input Data.</div>";
 }
 function capacityCheck(){
  const capNodeEl=document.getElementById("capNode");
@@ -291,5 +344,6 @@ function clearAll(){if(confirm("Hapus semua data lokal?")){db={...DEFAULT_DB};sa
 window.addEventListener("resize",drawMaps);
 (async function init(){
   db=await fetchDbFromServer();
-  refresh();
+	await updateMissingRouteMetrics();
+	refresh();
 })();

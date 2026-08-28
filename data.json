@@ -583,22 +583,24 @@
   ],
   "routes": [
     {
-      "id": "3bcbf58c-27d7-4085-aa3a-00f7c69843b0",
+      "id": "2a03eca2-ca78-4957-bdcf-362b1fa92431",
       "from": "sppg-055",
       "to": "school-001",
-      "mode": "Laut",
-      "time": 60,
+      "mode": "Darat",
+      "time": 100,
       "risk": "Rendah",
-      "cap": 0
+      "cap": 0,
+      "distance": 51.2594
     },
     {
-      "id": "f3060ca4-cc0c-4684-bae2-c8b59fcc403c",
-      "from": "sppg-058",
-      "to": "school-022",
-      "mode": "Darat",
-      "time": 0,
+      "id": "241925e2-ff91-4209-a1e4-593e71a5ca78",
+      "from": "sppg-055",
+      "to": "school-032",
+      "mode": "Laut",
+      "time": 15,
       "risk": "Rendah",
-      "cap": 0
+      "cap": 0,
+      "distance": 4.939291762506125
     }
   ],
   "risks": [],

@@ -3,6 +3,8 @@
 }
 body {
   margin: 0;
+  min-width: 0;
+  overflow-x: hidden;
   font-family:
     Segoe UI,
     Arial,
@@ -91,10 +93,13 @@ body {
 }
 .main {
   margin-left: 235px;
+  min-width: 0;
   padding: 22px 24px;
 }
 .top {
   display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 18px;
@@ -129,6 +134,7 @@ body {
   margin-bottom: 14px;
 }
 .card {
+  min-width: 0;
   background: #fff;
   border: 1px solid var(--line);
   border-radius: 11px;
@@ -236,6 +242,10 @@ table {
   width: 100%;
   border-collapse: collapse;
   font-size: 10px;
+}
+th,
+td {
+  overflow-wrap: anywhere;
 }
 th,
 td {
@@ -378,6 +388,7 @@ textarea {
   }
   .main {
     margin-left: 68px;
+    padding: 18px;
   }
   .cards {
     grid-template-columns: repeat(2, 1fr);
@@ -394,6 +405,45 @@ textarea {
   .cards,
   .formgrid {
     grid-template-columns: 1fr;
+  }
+  .top {
+    align-items: stretch;
+  }
+  .top > div:first-child {
+    flex: 1 1 100%;
+  }
+  .status {
+    align-self: flex-start;
+  }
+  .map,
+  .leaflet-map {
+    height: clamp(260px, 82vw, 380px);
+    min-height: 260px;
+  }
+  .table-pagination {
+    gap: 8px;
+    justify-content: space-between;
+  }
+  .table-pagination span {
+    text-align: center;
+  }
+}
+
+@media (max-width: 420px) {
+  .main {
+    padding: 12px 10px;
+  }
+  .card {
+    padding: 12px;
+  }
+  .map-search-row {
+    flex-direction: column;
+  }
+  .map-search-row .btn {
+    width: 100%;
+  }
+  .table-pagination {
+    font-size: 8px;
   }
 }
 
@@ -670,6 +720,35 @@ textarea {
 
 .table-search input {
   margin-top: 5px;
+}
+
+.table-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 34px;
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.table-page-arrow {
+  width: 30px;
+  height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--blue);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.table-page-arrow:disabled {
+  color: #b8c1cc;
+  background: #f5f7fa;
+  cursor: not-allowed;
 }
 
 .map-search {
