@@ -61,6 +61,10 @@ async function syncDbToServer(){
  }
 }
 let db=loadDb();
+let deferredInstallPrompt=null;
+window.addEventListener("beforeinstallprompt",event=>{event.preventDefault();deferredInstallPrompt=event;const button=document.getElementById("installButton");if(button)button.hidden=false});
+document.getElementById("installButton")?.addEventListener("click",async()=>{if(!deferredInstallPrompt)return;deferredInstallPrompt.prompt();await deferredInstallPrompt.userChoice;deferredInstallPrompt=null;document.getElementById("installButton").hidden=true});
+window.addEventListener("appinstalled",()=>{const button=document.getElementById("installButton");if(button)button.hidden=true});
 const titles={dashboard:"Dashboard",input:"Input Data",network:"Network Map",weather:"BMKG & Cuaca",route:"Route Planning",risk:"Risk & Alert",capacity:"Capacity Check",backup:"Backup Network",backupdata:"Backup Data"};
 document.querySelectorAll(".nav button").forEach(b=>b.onclick=()=>showPage(b.dataset.page));
 function showPage(id){document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===id));document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id===id));document.getElementById("title").textContent=titles[id];refresh();}

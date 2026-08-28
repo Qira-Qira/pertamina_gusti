@@ -110,6 +110,18 @@ body {
   align-items: flex-start;
   margin-bottom: 18px;
 }
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.install-button {
+  white-space: nowrap;
+}
+.install-button i {
+  margin-right: 5px;
+}
 .top h1 {
   margin: 0;
   font-size: 22px;
@@ -421,6 +433,9 @@ textarea {
   }
   .status {
     align-self: flex-start;
+  }
+  .top-actions {
+    width: 100%;
   }
   .map,
   .leaflet-map {

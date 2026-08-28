@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>RESILIENT 3T-MBG — Offline</title>
 <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#08254a">
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -25,7 +27,7 @@
 </aside>
 
 <main class="main">
-<header class="top"><div><h1 id="title">Dashboard</h1><p id="subtitle">RESILIENT 3T-MBG — sistem distribusi MBG yang dapat digunakan tanpa internet</p></div><div class="status">● OFFLINE READY</div></header>
+<header class="top"><div><h1 id="title">Dashboard</h1><p id="subtitle">RESILIENT 3T-MBG — sistem distribusi MBG yang dapat digunakan tanpa internet</p></div><div class="top-actions"><div class="status">● OFFLINE READY</div><button id="installButton" class="btn primary install-button" type="button" hidden><i class="fa-solid fa-download" aria-hidden="true"></i> Install App</button></div></header>
 
 <section id="dashboard" class="page active">
 <div class="cards">
@@ -151,5 +153,10 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="script.js"></script>
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js"));
+  }
+</script>
 </body>
 </html>

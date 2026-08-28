@@ -1,0 +1,20 @@
+{
+  "name": "RESILIENT 3T-MBG",
+  "short_name": "3T-MBG",
+  "description": "Sistem distribusi MBG untuk wilayah Maybrat.",
+  "lang": "id-ID",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f3f6fa",
+  "theme_color": "#08254a",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/assets/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
